@@ -11,5 +11,14 @@
   <depends>com.intellij.modules.xml</depends>
 
   <extensions defaultExtensionNs="com.intellij">
+    <fileType name="DotVVM Page" language="DotVVM" extensions="dothtml"
+              implementationClass="com.keeper7.dotvvm.lang.DotHtmlFileType" fieldName="INSTANCE"/>
+    <fileType name="DotVVM User Control" language="DotVVM" extensions="dotcontrol"
+              implementationClass="com.keeper7.dotvvm.lang.DotControlFileType" fieldName="INSTANCE"/>
+    <fileType name="DotVVM Master Page" language="DotVVM" extensions="dotmaster"
+              implementationClass="com.keeper7.dotvvm.lang.DotMasterFileType" fieldName="INSTANCE"/>
+
+    <lang.parserDefinition language="DotVVM"
+                           implementationClass="com.intellij.lang.html.HTMLParserDefinition"/>
   </extensions>
 </idea-plugin>

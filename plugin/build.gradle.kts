@@ -21,7 +21,9 @@ dependencies {
         rider(property("platformVersion") as String) {
             useInstaller.set(false)
         }
-        testFramework(TestFrameworkType.Platform)
+        // Rider nepublikuje test-framework jako artefakt — nutno vzít bundled
+        // testFramework.jar z distribuce (viz dokumentace Dependencies Extension)
+        testFramework(TestFrameworkType.Bundled)
     }
     testImplementation("junit:junit:4.13.2")
 }
