@@ -22,5 +22,7 @@
 
     <lang.parserDefinition language="DotVVMBinding"
                            implementationClass="com.keeper7.dotvvm.binding.BindingParserDefinition"/>
+
+    <multiHostInjector implementation="com.keeper7.dotvvm.binding.BindingInjector"/>
   </extensions>
 </idea-plugin>
