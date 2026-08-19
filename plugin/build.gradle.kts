@@ -1,3 +1,4 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -33,6 +34,17 @@ intellijPlatform {
         ideaVersion {
             sinceBuild = "262"
             untilBuild = provider { null }
+        }
+    }
+}
+
+// Ruční ověření v cílovém IDE: ./gradlew runRider
+intellijPlatformTesting {
+    runIde {
+        register("runRider") {
+            type = IntelliJPlatformType.Rider
+            version = property("riderVersion") as String
+            useInstaller = false
         }
     }
 }
