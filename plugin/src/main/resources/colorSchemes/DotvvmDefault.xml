@@ -1,0 +1,13 @@
+<scheme name="DotVVM Default" version="142" parent_scheme="Default">
+  <attributes>
+    <option name="DOTVVM_BINDING_KEYWORD">
+      <value><option name="FOREGROUND" value="0033B3"/><option name="FONT_TYPE" value="1"/></value>
+    </option>
+    <option name="DOTVVM_BINDING_IDENTIFIER">
+      <value><option name="FOREGROUND" value="871094"/></value>
+    </option>
+    <option name="DOTVVM_BINDING_BRACE">
+      <value><option name="FOREGROUND" value="000000"/><option name="FONT_TYPE" value="1"/></value>
+    </option>
+  </attributes>
+</scheme>

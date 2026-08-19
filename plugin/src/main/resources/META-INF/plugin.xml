@@ -24,5 +24,9 @@
                            implementationClass="com.keeper7.dotvvm.binding.BindingParserDefinition"/>
 
     <multiHostInjector implementation="com.keeper7.dotvvm.binding.BindingInjector"/>
+
+    <lang.syntaxHighlighterFactory language="DotVVMBinding"
+                                   implementationClass="com.keeper7.dotvvm.binding.BindingHighlighterFactory"/>
+    <additionalTextAttributes scheme="Default" file="colorSchemes/DotvvmDefault.xml"/>
   </extensions>
 </idea-plugin>
