@@ -7,7 +7,6 @@
     for .dothtml, .dotmaster and .dotcontrol files.
   ]]></description>
 
-  <depends>com.intellij.modules.rider</depends>
   <depends>com.intellij.modules.xml</depends>
 
   <extensions defaultExtensionNs="com.intellij">
@@ -19,6 +18,6 @@
               implementationClass="com.keeper7.dotvvm.lang.DotMasterFileType" fieldName="INSTANCE"/>
 
     <lang.parserDefinition language="DotVVM"
-                           implementationClass="com.intellij.lang.html.HTMLParserDefinition"/>
+                           implementationClass="com.keeper7.dotvvm.lang.DotvvmParserDefinition"/>
   </extensions>
 </idea-plugin>
