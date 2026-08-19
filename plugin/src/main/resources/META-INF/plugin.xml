@@ -19,5 +19,8 @@
 
     <lang.parserDefinition language="DotVVM"
                            implementationClass="com.keeper7.dotvvm.lang.DotvvmParserDefinition"/>
+
+    <lang.parserDefinition language="DotVVMBinding"
+                           implementationClass="com.keeper7.dotvvm.binding.BindingParserDefinition"/>
   </extensions>
 </idea-plugin>
