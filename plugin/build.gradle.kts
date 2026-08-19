@@ -17,13 +17,13 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        // Rider nepodporuje instalátorové distribuce, jen Maven artefakty
-        rider(property("platformVersion") as String) {
+        // EXPERIMENT: IU místo Rideru (stejná verze platformy 262, ale bez .NET backendu)
+        intellijIdeaUltimate(property("platformVersion") as String) {
             useInstaller.set(false)
         }
         // Rider nepublikuje test-framework jako artefakt — nutno vzít bundled
         // testFramework.jar z distribuce (viz dokumentace Dependencies Extension)
-        testFramework(TestFrameworkType.Bundled)
+        testFramework(TestFrameworkType.Platform)
     }
     testImplementation("junit:junit:4.13.2")
 }
