@@ -1,0 +1,15 @@
+<idea-plugin>
+  <id>com.keeper7.dotvvm</id>
+  <name>DotVVM</name>
+  <vendor url="https://github.com/keeper7">keeper7</vendor>
+  <description><![CDATA[
+    DotVVM support for JetBrains Rider — syntax highlighting, navigation and validation
+    for .dothtml, .dotmaster and .dotcontrol files.
+  ]]></description>
+
+  <depends>com.intellij.modules.rider</depends>
+  <depends>com.intellij.modules.xml</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+  </extensions>
+</idea-plugin>
