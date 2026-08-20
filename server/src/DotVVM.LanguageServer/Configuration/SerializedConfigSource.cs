@@ -13,6 +13,8 @@ public sealed class SerializedConfigSource : IConfigurationSource
 
     public string Name => "config";
 
+    public bool KnowsProjectPrefixes => true;
+
     public async Task<ControlRegistry?> LoadAsync(string projectDir, CancellationToken ct)
     {
         var file = FindConfigFile(projectDir);

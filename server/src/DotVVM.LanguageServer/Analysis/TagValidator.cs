@@ -13,7 +13,13 @@ public record ValidationIssue(
 /// </summary>
 public static class TagValidator
 {
-    public static IReadOnlyList<ValidationIssue> Validate(string text, ControlRegistry registry)
+    /// <param name="knowsProjectPrefixes">
+    /// Zda registr pochází ze zdroje, který zná prefixy registrované v projektu.
+    /// Vestavěné výchozí hodnoty je znát nemohou, takže na jejich základě nelze
+    /// cizí prefix prohlásit za chybu — uživatel by dostal chybu za správný kód.
+    /// </param>
+    public static IReadOnlyList<ValidationIssue> Validate(
+        string text, ControlRegistry registry, bool knowsProjectPrefixes)
     {
         // Prázdný registr znamená, že o projektu nic nevíme. Hlásit v takové situaci
         // chyby by znamenalo zaplavit uživatele falešnými poplachy.
@@ -25,6 +31,9 @@ public static class TagValidator
         {
             if (!registry.IsKnownPrefix(tag.Prefix))
             {
+                // Bez znalosti projektových prefixů mlčíme; proč, vysvětluje status bar.
+                if (!knowsProjectPrefixes) continue;
+
                 issues.Add(new ValidationIssue(
                     $"Neznámý prefix kontrolky '{tag.Prefix}'. Zaregistruj ho v DotvvmStartup.",
                     DiagnosticLevel.Error, tag.Line, tag.Character, tag.Length));

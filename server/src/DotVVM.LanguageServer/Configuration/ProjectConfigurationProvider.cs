@@ -3,7 +3,8 @@ using DotVVM.LanguageServer.Model;
 namespace DotVVM.LanguageServer.Configuration;
 
 /// <summary>Výsledek načtení konfigurace včetně názvu použitého stupně.</summary>
-public record ConfigurationResult(ControlRegistry Registry, string SourceName);
+public record ConfigurationResult(
+    ControlRegistry Registry, string SourceName, bool KnowsProjectPrefixes);
 
 /// <summary>
 /// Skládá zdroje od nejméně po nejvíce přesný. Vyšší stupeň nenahrazuje nižší,
@@ -33,6 +34,7 @@ public sealed class ProjectConfigurationProvider
     {
         var registry = ControlRegistry.Empty;
         var sourceName = "žádná";
+        var knowsProjectPrefixes = false;
 
         foreach (var source in _sources)
         {
@@ -53,8 +55,9 @@ public sealed class ProjectConfigurationProvider
 
             registry = registry.MergedWith(loaded);
             sourceName = source.Name;
+            knowsProjectPrefixes |= source.KnowsProjectPrefixes;
         }
 
-        return new ConfigurationResult(registry, sourceName);
+        return new ConfigurationResult(registry, sourceName, knowsProjectPrefixes);
     }
 }

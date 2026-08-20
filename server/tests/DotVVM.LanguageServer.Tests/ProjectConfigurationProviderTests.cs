@@ -9,8 +9,10 @@ public class ProjectConfigurationProviderTests
     private sealed class FakeSource : IConfigurationSource
     {
         private readonly ControlRegistry? _registry;
-        public FakeSource(string name, ControlRegistry? registry) { Name = name; _registry = registry; }
+        public FakeSource(string name, ControlRegistry? registry, bool knowsProjectPrefixes = false)
+        { Name = name; _registry = registry; KnowsProjectPrefixes = knowsProjectPrefixes; }
         public string Name { get; }
+        public bool KnowsProjectPrefixes { get; }
         public Task<ControlRegistry?> LoadAsync(string dir, CancellationToken ct) =>
             Task.FromResult(_registry);
     }
@@ -88,9 +90,36 @@ public class ProjectConfigurationProviderTests
         Assert.Equal("základní", result.SourceName);
     }
 
+    [Fact]
+    public async Task ProjectPrefixesAreUnknownWhenOnlyBuiltInsLoad()
+    {
+        var provider = new ProjectConfigurationProvider(new IConfigurationSource[]
+        {
+            new FakeSource("základní", RegistryWithPrefix("dot")),
+            new FakeSource("config", null, knowsProjectPrefixes: true),
+        });
+
+        var result = await provider.GetAsync("/x", default);
+        Assert.False(result.KnowsProjectPrefixes);
+    }
+
+    [Fact]
+    public async Task ProjectPrefixesAreKnownOnceAHigherTierLoads()
+    {
+        var provider = new ProjectConfigurationProvider(new IConfigurationSource[]
+        {
+            new FakeSource("základní", RegistryWithPrefix("dot")),
+            new FakeSource("config", RegistryWithPrefix("cc"), knowsProjectPrefixes: true),
+        });
+
+        var result = await provider.GetAsync("/x", default);
+        Assert.True(result.KnowsProjectPrefixes);
+    }
+
     private sealed class ThrowingSource : IConfigurationSource
     {
         public string Name => "rozbitá";
+        public bool KnowsProjectPrefixes => true;
         public Task<ControlRegistry?> LoadAsync(string dir, CancellationToken ct) =>
             throw new InvalidOperationException("simulovaná chyba");
     }
