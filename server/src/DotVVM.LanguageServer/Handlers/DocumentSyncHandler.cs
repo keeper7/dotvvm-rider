@@ -75,6 +75,10 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
         var configuration = await _configuration.GetAsync(projectDir, ct);
         var issues = TagValidator.Validate(text, configuration.Registry);
 
+        // Klient podle stupně kreslí status bar. Bez toho by uživatel neměl jak zjistit,
+        // proč server nezná jeho vlastní kontrolky — prázdný registr se navenek neprojeví.
+        _server.SendNotification("dotvvm/configurationTier", new { tier = configuration.SourceName });
+
         _server.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams
         {
             Uri = uri,
