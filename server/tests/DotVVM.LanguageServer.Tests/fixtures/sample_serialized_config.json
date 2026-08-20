@@ -1,0 +1,38 @@
+{
+  "dotvvmVersion": "4.3.6.0",
+  "config": {
+    "markup": {
+      "controls": [
+        { "tagPrefix": "dot", "namespace": "DotVVM.Framework.Controls", "assembly": "DotVVM.Framework" },
+        { "tagPrefix": "cc", "namespace": "MyApp.Controls", "assembly": "MyApp, Version=1.0.0.0" },
+        { "tagPrefix": "cc", "tagName": "Address", "src": "Controls/Address/Address.dotcontrol" },
+        { "tagPrefix": "bp", "namespace": "DotVVM.BusinessPack.Controls", "assembly": "DotVVM.BusinessPack" }
+      ],
+      "importedNamespaces": [],
+      "assemblies": []
+    }
+  },
+  "controls": {
+    "DotVVM.Framework.Controls.Button": {
+      "assembly": "DotVVM.Framework",
+      "baseType": "DotVVM.Framework.Controls.ButtonBase, DotVVM.Framework"
+    },
+    "MyApp.Controls.Widget": {
+      "assembly": "MyApp",
+      "baseType": "DotVVM.Framework.Controls.DotvvmControl, DotVVM.Framework",
+      "defaultContentProperty": "ContentTemplate"
+    }
+  },
+  "properties": {
+    "DotVVM.Framework.Controls.Button": {
+      "Text": { "type": "System.String" },
+      "Click": { "type": "DotVVM.Framework.Binding.Expressions.Command" }
+    },
+    "MyApp.Controls.Widget": {
+      "Value": { "type": "System.String" }
+    }
+  },
+  "propertyGroups": {},
+  "capabilities": {},
+  "assemblies": {}
+}
