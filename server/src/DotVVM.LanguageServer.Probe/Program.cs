@@ -2,6 +2,8 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.Json;
 using DotVVM.Framework.Configuration;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DotVVM.LanguageServer.Probe;
 
@@ -57,12 +59,33 @@ public static class Program
         return AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.GetFullPath(assemblyPath));
     }
 
+    /// <summary>
+    /// Vrátí typy, které šlo načíst. Velká aplikace obvykle obsahuje typy odkazující
+    /// na assembly, které tu nejsou k dispozici; GetTypes() by kvůli jedinému takovému
+    /// typu shodil celý rozbor, ačkoli DotvvmStartup načíst jde.
+    /// </summary>
+    private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+    {
+        try
+        {
+            return assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            return ex.Types.Where(t => t is not null)!;
+        }
+    }
+
     private static DotvvmConfiguration BuildConfiguration(Assembly assembly, string projectDir)
     {
-        var config = DotvvmConfiguration.CreateDefault();
+        // Uživatelské DotvvmStartup si běžně tahá IConfiguration z DI. CreateDefault()
+        // ji neregistruje, takže by rozbor skončil na "No service for type IConfiguration".
+        // Prázdná konfigurace stačí — z konfigurace se čtou hodnoty, ne registrace kontrolek.
+        var config = DotvvmConfiguration.CreateDefault(services =>
+            services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build()));
         config.ApplicationPhysicalPath = projectDir;
 
-        var startupType = assembly.GetTypes().FirstOrDefault(t =>
+        var startupType = GetLoadableTypes(assembly).FirstOrDefault(t =>
             typeof(IDotvvmStartup).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false });
 
         if (startupType is null)

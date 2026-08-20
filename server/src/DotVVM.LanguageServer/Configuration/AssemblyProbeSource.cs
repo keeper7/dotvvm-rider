@@ -10,29 +10,89 @@ namespace DotVVM.LanguageServer.Configuration;
 /// </summary>
 public sealed class AssemblyProbeSource : IConfigurationSource
 {
-    private readonly string _probePath;
+    /// <summary>Pevně zadaná cesta k probe; null znamená výběr podle TFM cílové assembly.</summary>
+    private readonly string? _fixedProbePath;
     private readonly TimeSpan _timeout;
+
+    /// <summary>Varianty probe od nejstarší; novější runtime načte i starší assembly.</summary>
+    private static readonly string[] ProbeFrameworks = { "net8.0", "net9.0" };
 
     public AssemblyProbeSource(string? probePath = null, TimeSpan? timeout = null)
     {
-        _probePath = probePath ?? DefaultProbePath();
+        _fixedProbePath = probePath;
         _timeout = timeout ?? TimeSpan.FromSeconds(30);
     }
 
     public string Name => "plná";
 
-    private static string DefaultProbePath() =>
-        Path.Combine(AppContext.BaseDirectory, "probe", "DotVVM.LanguageServer.Probe.dll");
+    private static string ProbeRoot => Path.Combine(AppContext.BaseDirectory, "probe");
 
     public async Task<ControlRegistry?> LoadAsync(string projectDir, CancellationToken ct)
     {
-        if (!File.Exists(_probePath)) return null;
-
         var assembly = FindProjectAssembly(projectDir);
         if (assembly is null) return null;
 
-        var output = await RunProbeAsync(assembly, projectDir, ct);
+        var probe = _fixedProbePath ?? ResolveProbeFor(assembly);
+        if (probe is null || !File.Exists(probe)) return null;
+
+        var output = await RunProbeAsync(probe, assembly, projectDir, ct);
         return output is null ? null : ParseProbeOutput(output);
+    }
+
+    /// <summary>
+    /// Vybere variantu probe podle TFM cílové assembly. Probe musí běžet na runtime
+    /// alespoň tak novém, jako je cílový projekt — net8.0 host neumí načíst assembly
+    /// cílenou na net9.0. Když TFM nejde přečíst, vezme nejnovější dostupnou variantu.
+    /// </summary>
+    private static string? ResolveProbeFor(string targetAssembly)
+    {
+        var wanted = ReadTargetFramework(targetAssembly);
+
+        var candidates = ProbeFrameworks
+            .Select(tfm => (Tfm: tfm, Path: Path.Combine(ProbeRoot, tfm,
+                                                         "DotVVM.LanguageServer.Probe.dll")))
+            .Where(c => File.Exists(c.Path))
+            .ToList();
+
+        if (candidates.Count == 0) return null;
+
+        if (wanted is not null)
+        {
+            var index = Array.IndexOf(ProbeFrameworks, wanted);
+            if (index >= 0)
+            {
+                // První varianta, která není starší než cílový projekt
+                var match = candidates.FirstOrDefault(
+                    c => Array.IndexOf(ProbeFrameworks, c.Tfm) >= index);
+                if (match.Path is not null) return match.Path;
+            }
+        }
+
+        return candidates[^1].Path;
+    }
+
+    /// <summary>
+    /// Přečte TFM z runtimeconfig.json vedle assembly, například "net9.0".
+    /// Veřejné kvůli testovatelnosti.
+    /// </summary>
+    public static string? ReadTargetFramework(string assemblyPath)
+    {
+        var config = Path.ChangeExtension(assemblyPath, ".runtimeconfig.json");
+        if (!File.Exists(config)) return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(config));
+            return doc.RootElement.TryGetProperty("runtimeOptions", out var options) &&
+                   options.TryGetProperty("tfm", out var tfm) &&
+                   tfm.ValueKind == JsonValueKind.String
+                ? tfm.GetString()
+                : null;
+        }
+        catch (Exception ex) when (ex is JsonException or IOException)
+        {
+            return null;
+        }
     }
 
     /// <summary>Najde nejnovější sestavenou assembly projektu v bin/.</summary>
@@ -65,7 +125,8 @@ public sealed class AssemblyProbeSource : IConfigurationSource
         return null;
     }
 
-    private async Task<string?> RunProbeAsync(string assembly, string projectDir, CancellationToken ct)
+    private async Task<string?> RunProbeAsync(
+        string probePath, string assembly, string projectDir, CancellationToken ct)
     {
         var info = new ProcessStartInfo("dotnet")
         {
@@ -73,7 +134,7 @@ public sealed class AssemblyProbeSource : IConfigurationSource
             RedirectStandardError = true,
             UseShellExecute = false,
         };
-        info.ArgumentList.Add(_probePath);
+        info.ArgumentList.Add(probePath);
         info.ArgumentList.Add(assembly);
         info.ArgumentList.Add(projectDir);
 

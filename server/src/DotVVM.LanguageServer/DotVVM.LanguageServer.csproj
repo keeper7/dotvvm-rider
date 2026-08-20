@@ -22,9 +22,13 @@
                       OutputItemType="none" />
   </ItemGroup>
 
+  <!--
+    Zkopíruje všechny TFM varianty probe, takže výsledek je probe/net8.0/… a
+    probe/net9.0/…. Cestu k té správné skládá AssemblyProbeSource za běhu.
+  -->
   <Target Name="CopyProbeOutput" AfterTargets="Build">
     <ItemGroup>
-      <ProbeFiles Include="$(MSBuildThisFileDirectory)..\DotVVM.LanguageServer.Probe\bin\$(Configuration)\$(TargetFramework)\**\*" />
+      <ProbeFiles Include="$(MSBuildThisFileDirectory)..\DotVVM.LanguageServer.Probe\bin\$(Configuration)\**\*" />
     </ItemGroup>
     <Copy SourceFiles="@(ProbeFiles)"
           DestinationFiles="@(ProbeFiles->'$(OutputPath)probe\%(RecursiveDir)%(Filename)%(Extension)')"
