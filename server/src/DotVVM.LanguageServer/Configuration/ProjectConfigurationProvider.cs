@@ -20,9 +20,14 @@ public sealed class ProjectConfigurationProvider
         _sources = sources.ToList();
     }
 
-    /// <summary>Výchozí složení: vestavěné hodnoty → serialized config.</summary>
+    /// <summary>Výchozí složení: vestavěné hodnoty → serialized config → assembly projektu.</summary>
     public static ProjectConfigurationProvider CreateDefault() =>
-        new(new IConfigurationSource[] { new BuiltInDefaults(), new SerializedConfigSource() });
+        new(new IConfigurationSource[]
+        {
+            new BuiltInDefaults(),
+            new SerializedConfigSource(),
+            new AssemblyProbeSource()
+        });
 
     public async Task<ConfigurationResult> GetAsync(string projectDir, CancellationToken ct)
     {
