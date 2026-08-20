@@ -1,8 +1,7 @@
 package com.keeper7.dotvvm.lsp
 
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
+import com.intellij.openapi.wm.WindowManager
 import com.intellij.platform.lsp.api.Lsp4jClient
 import com.intellij.platform.lsp.api.LspServerNotificationsHandler
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
@@ -28,9 +27,11 @@ class DotvvmLsp4jClient(
         if (project.getUserData(CONFIGURATION_TIER) == tier) return
 
         project.putUserData(CONFIGURATION_TIER, tier)
-        // Server posílá stupeň při každé změně dokumentu, ale překreslujeme jen při
-        // skutečné změně — jinak by widget blikal při každém stisku klávesy.
-        project.service<StatusBarWidgetsManager>()
-            .updateWidget(DotvvmStatusBarWidgetFactory::class.java)
+
+        // Widget musí stav přepočítat sám. `StatusBarWidgetsManager.updateWidget()` na to
+        // nestačí — ten řeší jen dostupnost widgetu, takže už vykreslený widget by dál
+        // ukazoval hodnotu z doby, kdy server ještě mlčel.
+        val statusBar = WindowManager.getInstance().getStatusBar(project) ?: return
+        (statusBar.getWidget(CONFIGURATION_TIER_WIDGET_ID) as? DotvvmStatusBarWidget)?.update()
     }
 }
