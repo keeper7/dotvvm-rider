@@ -10,4 +10,25 @@
     <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.9" />
   </ItemGroup>
 
+  <!--
+    Probe se sestaví do podadresáře probe/ vedle serveru; tam ho hledá
+    AssemblyProbeSource.DefaultProbePath(). ReferenceOutputAssembly=false,
+    protože probe se spouští jako samostatný proces, nelinkuje se.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\DotVVM.LanguageServer.Probe\DotVVM.LanguageServer.Probe.csproj"
+                      ReferenceOutputAssembly="false"
+                      Private="false"
+                      OutputItemType="none" />
+  </ItemGroup>
+
+  <Target Name="CopyProbeOutput" AfterTargets="Build">
+    <ItemGroup>
+      <ProbeFiles Include="$(MSBuildThisFileDirectory)..\DotVVM.LanguageServer.Probe\bin\$(Configuration)\$(TargetFramework)\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ProbeFiles)"
+          DestinationFiles="@(ProbeFiles->'$(OutputPath)probe\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>
