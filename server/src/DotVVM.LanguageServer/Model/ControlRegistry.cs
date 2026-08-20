@@ -1,0 +1,73 @@
+namespace DotVVM.LanguageServer.Model;
+
+/// <summary>
+/// Dotazy nad registrovanými kontrolkami. Bez závislosti na LSP i na DotVVM —
+/// jen data a jejich vyhledávání.
+/// </summary>
+public sealed class ControlRegistry
+{
+    private readonly IReadOnlyList<ControlRegistration> _registrations;
+    private readonly IReadOnlyList<ControlInfo> _controls;
+
+    public ControlRegistry(
+        IEnumerable<ControlRegistration> registrations,
+        IEnumerable<ControlInfo> controls)
+    {
+        _registrations = registrations.ToList();
+        _controls = controls.ToList();
+    }
+
+    public static ControlRegistry Empty { get; } =
+        new(Array.Empty<ControlRegistration>(), Array.Empty<ControlInfo>());
+
+    public IReadOnlyCollection<string> AllPrefixes =>
+        _registrations.Select(r => r.TagPrefix).Distinct().ToList();
+
+    public bool IsKnownPrefix(string prefix) =>
+        _registrations.Any(r => string.Equals(r.TagPrefix, prefix, StringComparison.Ordinal));
+
+    public bool IsKnownTag(string prefix, string tagName)
+    {
+        if (_registrations.Any(r => r.TagPrefix == prefix
+                                    && r.IsMarkupControl
+                                    && r.TagName == tagName))
+        {
+            return true;
+        }
+
+        return NamespacesFor(prefix)
+            .Any(ns => _controls.Any(c => c.Namespace == ns && c.TagName == tagName));
+    }
+
+    public IReadOnlyCollection<string> GetTagsForPrefix(string prefix)
+    {
+        var markup = _registrations
+            .Where(r => r.TagPrefix == prefix && r.IsMarkupControl)
+            .Select(r => r.TagName!);
+
+        var namespaces = NamespacesFor(prefix).ToHashSet(StringComparer.Ordinal);
+        var typed = _controls
+            .Where(c => namespaces.Contains(c.Namespace))
+            .Select(c => c.TagName);
+
+        return markup.Concat(typed).Distinct().ToList();
+    }
+
+    public ControlInfo? GetControl(string prefix, string tagName)
+    {
+        var namespaces = NamespacesFor(prefix).ToHashSet(StringComparer.Ordinal);
+        return _controls.FirstOrDefault(c => namespaces.Contains(c.Namespace) && c.TagName == tagName);
+    }
+
+    private IEnumerable<string> NamespacesFor(string prefix) =>
+        _registrations
+            .Where(r => r.TagPrefix == prefix && r.Namespace is not null)
+            .Select(r => r.Namespace!);
+
+    /// <summary>Sloučí dva registry; hodnoty z <paramref name="other"/> mají přednost.</summary>
+    public ControlRegistry MergedWith(ControlRegistry other) =>
+        new(_registrations.Concat(other._registrations).Distinct(),
+            other._controls.Concat(_controls)
+                 .GroupBy(c => c.FullTypeName, StringComparer.Ordinal)
+                 .Select(g => g.First()));
+}
