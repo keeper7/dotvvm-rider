@@ -57,9 +57,7 @@ public class AssemblyProbeSourceTests
     [Fact]
     public void ProbeIsDeployedIntoServerOutput()
     {
-        var probe = FindDeployedProbe();
-        Assert.True(probe is not null,
-            "probe/DotVVM.LanguageServer.Probe.dll chybí ve výstupu serveru");
+        Assert.NotEmpty(FindDeployedProbes());
     }
 
     /// <summary>
@@ -75,8 +73,7 @@ public class AssemblyProbeSourceTests
         var appDir = Path.Combine(repoRoot, "fixtures", "SampleApp");
         if (!File.Exists(Path.Combine(appDir, "bin", "Debug", "net8.0", "SampleApp.dll"))) return;
 
-        var probe = FindDeployedProbe();
-        if (probe is null) return;
+        if (!FindDeployedProbes().TryGetValue("net8.0", out var probe)) return;
 
         var registry = await new AssemblyProbeSource(probe).LoadAsync(appDir, default);
 
@@ -86,18 +83,29 @@ public class AssemblyProbeSourceTests
         Assert.True(registry.IsKnownPrefix("dot"));
     }
 
-    /// <summary>Najde probe ve výstupu serverového projektu, ať už Debug nebo Release.</summary>
-    private static string? FindDeployedProbe()
+    /// <summary>
+    /// Najde varianty probe ve výstupu serverového projektu. Layout je
+    /// probe/&lt;tfm&gt;/DotVVM.LanguageServer.Probe.dll — klíčem je název TFM složky.
+    /// </summary>
+    private static Dictionary<string, string> FindDeployedProbes()
     {
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
         var root = FindRepositoryRoot();
-        if (root is null) return null;
+        if (root is null) return result;
 
         var serverBin = Path.Combine(root, "server", "src", "DotVVM.LanguageServer", "bin");
-        if (!Directory.Exists(serverBin)) return null;
+        if (!Directory.Exists(serverBin)) return result;
 
-        return Directory
-            .EnumerateFiles(serverBin, "DotVVM.LanguageServer.Probe.dll", SearchOption.AllDirectories)
-            .FirstOrDefault(f => Path.GetFileName(Path.GetDirectoryName(f)) == "probe");
+        foreach (var file in Directory.EnumerateFiles(
+                     serverBin, "DotVVM.LanguageServer.Probe.dll", SearchOption.AllDirectories))
+        {
+            var tfmDir = Path.GetDirectoryName(file);
+            var probeDir = Path.GetDirectoryName(tfmDir);
+            if (Path.GetFileName(probeDir) != "probe") continue;
+
+            result[Path.GetFileName(tfmDir)!] = file;
+        }
+        return result;
     }
 
     /// <summary>
@@ -114,5 +122,45 @@ public class AssemblyProbeSourceTests
             dir = dir.Parent;
         }
         return null;
+    }
+
+    [Theory]
+    [InlineData("net8.0", "8.0.0")]
+    [InlineData("net9.0", "9.0.0")]
+    public void SelectsProbeMatchingTargetRuntime(string expectedFolder, string frameworkVersion)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dotvvm-tfm-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "App.runtimeconfig.json"),
+                "{\"runtimeOptions\":{\"tfm\":\"" + expectedFolder +
+                "\",\"framework\":{\"name\":\"Microsoft.NETCore.App\",\"version\":\"" +
+                frameworkVersion + "\"}}}");
+
+            var tfm = AssemblyProbeSource.ReadTargetFramework(Path.Combine(dir, "App.dll"));
+            Assert.Equal(expectedFolder, tfm);
+        }
+        finally { Directory.Delete(dir, recursive: true); }
+    }
+
+    [Fact]
+    public void FallsBackWhenRuntimeConfigMissing()
+    {
+        Assert.Null(AssemblyProbeSource.ReadTargetFramework("/nonexistent/App.dll"));
+    }
+
+    /// <summary>
+    /// Probe musí být k dispozici pro víc TFM. S jediným net8.0 probem nelze načíst
+    /// assembly projektu cíleného na net9.0 — runtime odmítne System.Runtime 9.0.0.0
+    /// a stupeň 3 mlčky vypadne.
+    /// </summary>
+    [Fact]
+    public void ProbeIsDeployedForMultipleTargetFrameworks()
+    {
+        var found = FindDeployedProbes();
+
+        Assert.Contains("net8.0", found.Keys);
+        Assert.Contains("net9.0", found.Keys);
     }
 }

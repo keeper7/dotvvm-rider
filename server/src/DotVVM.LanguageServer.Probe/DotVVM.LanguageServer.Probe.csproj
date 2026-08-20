@@ -3,10 +3,28 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>DotVVM.LanguageServer.Probe</RootNamespace>
+    <!--
+      Přebíjí TargetFramework z Directory.Build.props. Probe musí běžet na runtime
+      alespoň tak novém, jako je cílový projekt: net8.0 host neumí načíst assembly
+      cílenou na net9.0 (odmítne System.Runtime 9.0.0.0). Server proto vybírá
+      variantu podle runtimeconfig.json cílové assembly.
+    -->
+    <TargetFramework></TargetFramework>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="DotVVM" Version="4.3.17" />
+  </ItemGroup>
+
+  <!--
+    Cílové projekty jsou ASP.NET Core aplikace a jejich typy odkazují na
+    Microsoft.AspNetCore.*. Ty žijí ve sdíleném frameworku, ne v NuGet balíčcích,
+    takže je AssemblyDependencyResolver nedohledá. Bez tohoto odkazu probe skončí
+    na "Could not load Microsoft.AspNetCore.Mvc.RazorPages".
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
 </Project>
