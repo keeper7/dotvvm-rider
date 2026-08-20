@@ -6,6 +6,10 @@ output
 .intellijPlatform
 .tmp
 
+# .NET (LSP server)
+[Bb]in/
+[Oo]bj/
+
 # IDEs
 /.idea/*.iml
 /.idea/*.xml
