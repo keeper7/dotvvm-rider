@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DotVVM plugin for JetBrains Rider. Two parts that are still unconnected (plan 3 joins them):
-a native Kotlin plugin built on the IntelliJ Platform's HTML infrastructure — **no ReSharper
-engine, no RD protocol** — and a standalone C# LSP server under `server/`.
+DotVVM plugin for JetBrains Rider. Two parts, joined by plan 3: a native Kotlin plugin built
+on the IntelliJ Platform's HTML infrastructure — **no ReSharper engine, no RD protocol** — and a
+standalone C# LSP server under `server/` that the plugin bundles and launches as a subprocess.
 
 `.dothtml`, `.dotmaster` and `.dotcontrol` are treated as an HTML superset: the language extends
 `HTMLLanguage`, so HTML/CSS/JS support comes for free. Binding expressions (`{value: Name}`) are
@@ -28,12 +28,16 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 
 ```bash
 cd plugin
-./gradlew buildPlugin                    # Full build
-./gradlew test                           # All tests (28 as of task 7)
+./gradlew buildPlugin                    # Full build — also re-zips the bundled server
+./gradlew test                           # All tests (32 after plan 3)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
 ```
+
+`./gradlew build` does **not** rebuild the distribution zip. After changing the server, run
+`buildPlugin`, or anything unpacking `build/distributions/` tests a stale server — a silent trap,
+because the plugin still compiles and the old server still answers.
 
 Run long builds in the background with output to a file, not piped into `tail` — a pipe returns the
 pipe's exit code, masking a failed build. Beware the same trap in `cmd > log 2>&1; echo $?`, where
@@ -43,6 +47,7 @@ the reported code belongs to `echo`, not to the build.
 
 - `plugin/src/main/kotlin/com/keeper7/dotvvm/lang/` — language, file types and parser definition
 - `plugin/src/main/kotlin/com/keeper7/dotvvm/binding/` — binding scanner, lexer, injector, highlighter
+- `plugin/src/main/kotlin/com/keeper7/dotvvm/lsp/` — server locator, LSP client, status bar widget
 - `plugin/src/main/resources/META-INF/plugin.xml` — plugin descriptor
 - `server/src/DotVVM.LanguageServer/` — LSP server: `Model/`, `Configuration/`, `Analysis/`, `Handlers/`
 - `server/src/DotVVM.LanguageServer.Probe/` — loads the project assembly in its own process
@@ -65,6 +70,32 @@ The probe runs as a separate process on purpose. It executes the user's own `Dot
 can fail in any way at all — the isolation turns that into an exit code and a fallback to the
 serialized config, not a dead language server.
 
+## LSP integration
+
+The plugin bundles the published server under `<plugin>/server/` and starts it with
+`dotnet <dll>`; `ServerBinaryLocator` finds it and stays free of IntelliJ API so plain JUnit
+can test it.
+
+The platform renamed its LSP classes to match LSP terminology — **the IDE is the client**, the
+external process is the server. Use `LspIntegrationProvider` and `ProjectWideLspClientDescriptor`
+registered under `com.intellij.platform.lsp.integrationProvider`; the `*ServerSupportProvider*`
+pair still exists but is the older spelling. Per-feature `lspXxxSupport` properties are gone,
+replaced by a single `lspCustomization` holding `Lsp*Customizer` objects — formatting, on-type
+formatting, folding and document symbols are switched off there, because the native HTML support
+does them better than a server that sees only text.
+
+LSP lives in `com.intellij.modules.lsp`, which Community lacks — hence the `<depends>` entry.
+Both IU and Rider bundle it.
+
+`dotvvm/configurationTier` is a custom notification, so nothing in the protocol carries it:
+`DotvvmLsp4jClient` subclasses `Lsp4jClient` and picks it up with `@JsonNotification`. Without
+that subclass the status bar would sit at its default forever.
+
+The validator reports an unknown *prefix* only when the registry came from a source that can
+see the project's own prefixes (`IConfigurationSource.KnowsProjectPrefixes`). Built-in defaults
+cannot, so on tier 1 a `<cc:MyControl>` stays silent while `<dot:NoSuchControl>` is still
+flagged — standard controls are known even there.
+
 ## Testing
 
 JUnit 4 runner, two styles side by side:
@@ -78,6 +109,8 @@ a global platform registry and fail without an initialised `Application`.
 
 The probe fails on real projects unless all of these hold — each cost a debugging round:
 
+- **`dotnet publish` refuses a multi-TFM project with `--output`** (NETSDK1129). The Gradle
+  build therefore publishes each framework separately into `probe/<tfm>/`.
 - **Its TFM must be at least as new as the target project's.** A net8.0 host refuses a net9.0
   assembly. It therefore builds for `net8.0;net9.0` into `probe/<tfm>/`, and
   `AssemblyProbeSource` picks the variant from `tfm` in the target's `runtimeconfig.json`.
@@ -106,6 +139,9 @@ so it is the same platform version minus the .NET backend, and the plugin uses n
 The cost is that `<depends>com.intellij.modules.rider</depends>` had to go — otherwise the plugin
 would not load in IU. The plugin is therefore no longer formally Rider-only. Revisit this before
 publishing to Marketplace.
+
+The `runRider` sandbox lives in `.intellijPlatform/sandbox/dotvvm-rider/IU-*/…_runRider/` —
+named after the compile platform (IU), not Rider, so `RD-*/` next to it is a stale leftover.
 
 Two related gotchas: Rider does not publish its test-framework as an artifact (it needs
 `TestFrameworkType.Bundled` — note the docs wrongly say `TestFrameworkType.Platform.Bundled`), and
