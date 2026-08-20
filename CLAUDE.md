@@ -91,6 +91,12 @@ Both IU and Rider bundle it.
 `DotvvmLsp4jClient` subclasses `Lsp4jClient` and picks it up with `@JsonNotification`. Without
 that subclass the status bar would sit at its default forever.
 
+Repainting that widget needs `EditorBasedStatusBarPopup.update()` on the instance fetched from
+the status bar. `StatusBarWidgetsManager.updateWidget(factory)` looks like the right call and
+is not — it only re-evaluates whether the widget is *available*, so the widget kept showing the
+tier it computed before the server answered, and corrected itself only when an unrelated editor
+event forced a repaint. That made it look intermittent rather than broken.
+
 The validator reports an unknown *prefix* only when the registry came from a source that can
 see the project's own prefixes (`IConfigurationSource.KnowsProjectPrefixes`). Built-in defaults
 cannot, so on tier 1 a `<cc:MyControl>` stays silent while `<dot:NoSuchControl>` is still
