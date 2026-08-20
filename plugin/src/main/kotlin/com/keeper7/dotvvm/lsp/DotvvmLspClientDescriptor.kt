@@ -3,6 +3,8 @@ package com.keeper7.dotvvm.lsp
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.lsp.api.Lsp4jClient
+import com.intellij.platform.lsp.api.LspServerNotificationsHandler
 import com.intellij.platform.lsp.api.ProjectWideLspClientDescriptor
 import com.intellij.platform.lsp.api.customization.LspCustomization
 import com.intellij.platform.lsp.api.customization.LspDocumentSymbolDisabled
@@ -24,6 +26,9 @@ class DotvvmLspClientDescriptor(project: Project, private val serverDll: Path)
         GeneralCommandLine(ServerBinaryLocator.buildCommandLine(serverDll))
             .withWorkDirectory(project.basePath)
             .withCharset(Charsets.UTF_8)
+
+    override fun createLsp4jClient(handler: LspServerNotificationsHandler): Lsp4jClient =
+        DotvvmLsp4jClient(handler, project)
 
     /**
      * Formátování, skládání a strukturu souboru poskytuje nativní HTML podpora lépe než
