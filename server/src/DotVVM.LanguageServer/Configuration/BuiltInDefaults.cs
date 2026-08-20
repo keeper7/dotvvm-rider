@@ -10,6 +10,8 @@ public sealed class BuiltInDefaults : IConfigurationSource
 {
     public string Name => "základní";
 
+    public bool KnowsProjectPrefixes => false;
+
     private const string Ns = "DotVVM.Framework.Controls";
 
     private static readonly (string Tag, string[] Props)[] Controls =

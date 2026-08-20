@@ -20,13 +20,13 @@ public class TagValidatorTests
     [Fact]
     public void KnownTagProducesNoIssue()
     {
-        Assert.Empty(TagValidator.Validate("<dot:Button Text=\"x\" />", Registry));
+        Assert.Empty(TagValidator.Validate("<dot:Button Text=\"x\" />", Registry, knowsProjectPrefixes: true));
     }
 
     [Fact]
     public void UnknownPrefixIsReportedAsError()
     {
-        var issues = TagValidator.Validate("<xyz:Thing />", Registry);
+        var issues = TagValidator.Validate("<xyz:Thing />", Registry, knowsProjectPrefixes: true);
         var issue = Assert.Single(issues);
         Assert.Equal(DiagnosticLevel.Error, issue.Level);
         Assert.Contains("xyz", issue.Message);
@@ -35,7 +35,7 @@ public class TagValidatorTests
     [Fact]
     public void UnknownTagInKnownPrefixIsReportedAsError()
     {
-        var issues = TagValidator.Validate("<dot:NoSuchControl />", Registry);
+        var issues = TagValidator.Validate("<dot:NoSuchControl />", Registry, knowsProjectPrefixes: true);
         var issue = Assert.Single(issues);
         Assert.Contains("NoSuchControl", issue.Message);
     }
@@ -43,19 +43,19 @@ public class TagValidatorTests
     [Fact]
     public void MarkupControlIsAccepted()
     {
-        Assert.Empty(TagValidator.Validate("<cc:Address />", Registry));
+        Assert.Empty(TagValidator.Validate("<cc:Address />", Registry, knowsProjectPrefixes: true));
     }
 
     [Fact]
     public void PlainHtmlIsNotValidated()
     {
-        Assert.Empty(TagValidator.Validate("<div><span>x</span></div>", Registry));
+        Assert.Empty(TagValidator.Validate("<div><span>x</span></div>", Registry, knowsProjectPrefixes: true));
     }
 
     [Fact]
     public void IssueCarriesPositionOfTag()
     {
-        var issues = TagValidator.Validate("<html>\n  <dot:Nope />\n</html>", Registry);
+        var issues = TagValidator.Validate("<html>\n  <dot:Nope />\n</html>", Registry, knowsProjectPrefixes: true);
         var issue = Assert.Single(issues);
         Assert.Equal(1, issue.Line);
         Assert.Equal(3, issue.Character);
@@ -63,16 +63,32 @@ public class TagValidatorTests
     }
 
     [Fact]
+    public void UnknownPrefixIsSilentWhenProjectPrefixesAreUnknown()
+    {
+        // Stupeň 1 zná jen vestavěné kontrolky, takže o prefixu 'cc' nemůže nic tvrdit.
+        // Podtrhnout ho jako chybu by znamenalo obvinit uživatele z něčeho, co server neví.
+        Assert.Empty(TagValidator.Validate("<cc:Address />", Registry, knowsProjectPrefixes: false));
+    }
+
+    [Fact]
+    public void UnknownTagInKnownPrefixIsStillReportedWhenProjectPrefixesAreUnknown()
+    {
+        // Standardní kontrolky zná i stupeň 1, takže překlep v 'dot:' hlásit smí.
+        var issues = TagValidator.Validate("<dot:NoSuchControl />", Registry, knowsProjectPrefixes: false);
+        Assert.Contains("NoSuchControl", Assert.Single(issues).Message);
+    }
+
+    [Fact]
     public void EmptyRegistryReportsNothing()
     {
         // bez znalosti projektu nesmí server zaplavit uživatele falešnými chybami
-        Assert.Empty(TagValidator.Validate("<dot:Button />", ControlRegistry.Empty));
+        Assert.Empty(TagValidator.Validate("<dot:Button />", ControlRegistry.Empty, knowsProjectPrefixes: true));
     }
 
     [Fact]
     public void ReportsEachUnknownTagSeparately()
     {
-        var issues = TagValidator.Validate("<dot:A /><dot:B />", Registry);
+        var issues = TagValidator.Validate("<dot:A /><dot:B />", Registry, knowsProjectPrefixes: true);
         Assert.Equal(2, issues.Count);
     }
 }

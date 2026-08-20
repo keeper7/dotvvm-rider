@@ -25,6 +25,8 @@ public sealed class AssemblyProbeSource : IConfigurationSource
 
     public string Name => "plná";
 
+    public bool KnowsProjectPrefixes => true;
+
     private static string ProbeRoot => Path.Combine(AppContext.BaseDirectory, "probe");
 
     public async Task<ControlRegistry?> LoadAsync(string projectDir, CancellationToken ct)

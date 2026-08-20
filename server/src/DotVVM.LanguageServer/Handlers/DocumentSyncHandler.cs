@@ -73,7 +73,8 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
     {
         var projectDir = Path.GetDirectoryName(uri.GetFileSystemPath()) ?? ".";
         var configuration = await _configuration.GetAsync(projectDir, ct);
-        var issues = TagValidator.Validate(text, configuration.Registry);
+        var issues = TagValidator.Validate(
+            text, configuration.Registry, configuration.KnowsProjectPrefixes);
 
         // Klient podle stupně kreslí status bar. Bez toho by uživatel neměl jak zjistit,
         // proč server nezná jeho vlastní kontrolky — prázdný registr se navenek neprojeví.
