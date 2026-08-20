@@ -15,6 +15,19 @@ class DotvvmFileTypeTest : BasePlatformTestCase() {
         assertTrue("očekáván XmlFile, byl ${file.javaClass.name}", file is XmlFile)
     }
 
+    /**
+     * Platforma hlásí varování, když dva file typy sdílejí getDisplayName() —
+     * dědí se z jazyka, takže bez přepsání vrátí všechny tři "DotVVM".
+     */
+    fun testFileTypesHaveDistinctDisplayNames() {
+        val names = listOf(
+            DotHtmlFileType.INSTANCE.displayName,
+            DotControlFileType.INSTANCE.displayName,
+            DotMasterFileType.INSTANCE.displayName,
+        )
+        assertEquals("zobrazovaná jména musí být unikátní, byla: $names", 3, names.toSet().size)
+    }
+
     fun testDotcontrolAndDotmasterAreRecognized() {
         assertEquals(DotvvmLanguage.INSTANCE,
             myFixture.configureByText("C.dotcontrol", "<div/>").language)
