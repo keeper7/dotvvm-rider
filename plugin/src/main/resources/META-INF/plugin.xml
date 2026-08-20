@@ -8,6 +8,8 @@
   ]]></description>
 
   <depends>com.intellij.modules.xml</depends>
+  <!-- LSP API není v Community edici; bez tohoto modulu se plugin nenačte -->
+  <depends>com.intellij.modules.lsp</depends>
 
   <extensions defaultExtensionNs="com.intellij">
     <fileType name="DotVVM Page" language="DotVVM" extensions="dothtml"
@@ -27,6 +29,9 @@
 
     <lang.syntaxHighlighterFactory language="DotVVMBinding"
                                    implementationClass="com.keeper7.dotvvm.binding.BindingHighlighterFactory"/>
+    <platform.lsp.integrationProvider
+        implementation="com.keeper7.dotvvm.lsp.DotvvmLspIntegrationProvider"/>
+
     <additionalTextAttributes scheme="Default" file="colorSchemes/DotvvmDefault.xml"/>
   </extensions>
 </idea-plugin>
