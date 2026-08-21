@@ -35,6 +35,9 @@
     <statusBarWidgetFactory id="DotvvmConfigurationTier"
                             implementation="com.keeper7.dotvvm.lsp.DotvvmStatusBarWidgetFactory"/>
 
+    <lang.inspectionSuppressor language="DotVVM"
+                               implementationClass="com.keeper7.dotvvm.ide.DotvvmInspectionSuppressor"/>
+
     <additionalTextAttributes scheme="Default" file="colorSchemes/DotvvmDefault.xml"/>
   </extensions>
 </idea-plugin>
