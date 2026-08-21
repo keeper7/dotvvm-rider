@@ -41,7 +41,7 @@
     <lang.inspectionSuppressor language="DotVVM"
                                implementationClass="com.keeper7.dotvvm.ide.DotvvmInspectionSuppressor"/>
 
-    <completion.contributor language="DotVVM"
+    <completion.contributor language="DotVVM" order="first"
                             implementationClass="com.keeper7.dotvvm.directive.DirectiveCompletionContributor"/>
 
     <highlightErrorFilter
