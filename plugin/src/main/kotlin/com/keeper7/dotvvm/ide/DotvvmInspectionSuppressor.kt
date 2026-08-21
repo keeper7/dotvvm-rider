@@ -48,12 +48,18 @@ class DotvvmInspectionSuppressor : InspectionSuppressor {
         const val UNBOUND_PREFIX = "XmlUnboundNsPrefix"
         const val UNKNOWN_ATTRIBUTE = "HtmlUnknownAttribute"
 
-        /** DotVVM properties použitelné přímo na HTML elementech. */
+        /** Properties `HtmlGenericControl`, tedy DotVVM properties psané přímo na HTML elementu. */
         val HTML_EXTENSIONS = setOf(
-            "Visible", "DataContext", "IncludeInPage", "InnerText", "PostBack.Update"
+            "Visible", "DataContext", "IncludeInPage", "InnerText"
         )
 
-        /** Skupiny atributů; za tečkou nebo pomlčkou následuje libovolný název. */
+        /**
+         * Zbylé dva druhy properties, poznatelné podle zápisu:
+         * tečka je *attached property* (`Validator.Value` — property `Value` připojená
+         * třídou `Validator`), pomlčka je *property group* (`Class-required` — skupina
+         * `Class-`, klíč `required`). Významově jde o properties stejně jako výše,
+         * jen se liší tím, kde jsou deklarované.
+         */
         val PREFIXES = listOf(
             "Validator.", "Validation.", "Events.", "PostBack.", "RenderSettings.",
             "Class-", "Style-", "Attr-", "Property-"
