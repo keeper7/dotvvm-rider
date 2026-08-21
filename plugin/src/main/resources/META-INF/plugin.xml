@@ -47,6 +47,9 @@
     <annotator language="DotVVM"
                implementationClass="com.keeper7.dotvvm.directive.DirectiveAnnotator"/>
 
+    <gotoDeclarationHandler
+        implementation="com.keeper7.dotvvm.directive.MasterPageNavigationHandler"/>
+
     <additionalTextAttributes scheme="Default" file="colorSchemes/DotvvmDefault.xml"/>
   </extensions>
 </idea-plugin>
