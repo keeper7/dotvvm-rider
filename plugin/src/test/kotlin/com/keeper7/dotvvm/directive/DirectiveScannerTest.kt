@@ -79,6 +79,15 @@ class DirectiveScannerTest {
         assertEquals(3, found[0].start)
     }
 
+    @Test fun findsDirectivesInFileStartingWithBom() {
+        // Soubory uložené Visual Studiem začínají BOM; bez jeho přeskočení
+        // by skener neviděl ani první direktivu
+        val text = "\uFEFF@viewModel System.Object\n@noWrapperTag\n<div></div>"
+        val found = DirectiveScanner.scan(text)
+        assertEquals(listOf("viewModel", "noWrapperTag"), found.map { it.name })
+        assertEquals(1, found[0].start)
+    }
+
     @Test fun knownNamesContainViewModel() {
         assertTrue(DirectiveScanner.KNOWN_NAMES.contains("viewModel"))
     }
