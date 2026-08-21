@@ -29,7 +29,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (69 after plan 4)
+./gradlew test                           # All tests (72 after plan 4)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -131,6 +131,11 @@ already visited. What works is not steering the lexer but handing it text withou
 `AttributeQuoteMasker` replaces those quotes with spaces **character for character**, so every
 offset still matches the original. The masked text goes to the lexer only; the document keeps
 the real quotes, and a test guards that.
+
+Mask it in **two** places: `DotvvmParserDefinition.createLexer` builds the PSI, but the editor
+paints from `SyntaxHighlighter`, which runs a lexer of its own. With only the first, the tree
+is right while the closing quote and everything after it lose their attribute colouring — a
+mismatch no PSI dump reveals, because the PSI is correct.
 
 ## Testing
 
