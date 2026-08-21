@@ -29,7 +29,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (57 after plan 4)
+./gradlew test                           # All tests (69 after plan 4)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -122,6 +122,15 @@ a .NET type (`@viewModel`, `@baseType`) stay with the server, which alone has th
 
 `HtmlUnknownTagInspection` cannot be tested here: the test IU has no HTML schema at all, so it
 reports `<html>` as unknown even for untouched files. Anything about schema needs the sandbox.
+
+Quotes inside a binding (`Changed="{staticCommand: X = Y ?? ""}"`) are valid DotVVM but end
+the attribute value in HTML. Three attempts to steer the HTML lexer all failed on its internal
+state: `BaseHtmlLexer.start()` refuses to restart at another position, stepping the delegate
+forward leaves it outside the tag, and `restore(LexerPosition)` only returns to a position
+already visited. What works is not steering the lexer but handing it text without the problem —
+`AttributeQuoteMasker` replaces those quotes with spaces **character for character**, so every
+offset still matches the original. The masked text goes to the lexer only; the document keeps
+the real quotes, and a test guards that.
 
 ## Testing
 
