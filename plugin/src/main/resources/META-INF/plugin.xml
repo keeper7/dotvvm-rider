@@ -38,6 +38,9 @@
     <lang.inspectionSuppressor language="DotVVM"
                                implementationClass="com.keeper7.dotvvm.ide.DotvvmInspectionSuppressor"/>
 
+    <completion.contributor language="DotVVM"
+                            implementationClass="com.keeper7.dotvvm.directive.DirectiveCompletionContributor"/>
+
     <additionalTextAttributes scheme="Default" file="colorSchemes/DotvvmDefault.xml"/>
   </extensions>
 </idea-plugin>
