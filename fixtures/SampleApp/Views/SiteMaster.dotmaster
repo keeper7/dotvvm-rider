@@ -1,0 +1,28 @@
+﻿@viewModel SampleApp.ViewModels.SiteMasterViewModel, SampleApp
+@masterPage Views/BaseMaster.dotmaster
+@import SampleApp.Resources
+
+<dot:Content ContentPlaceHolderID="TitleContent">
+    {{resource: Labels.ApplicationName}}
+</dot:Content>
+
+<dot:Content ContentPlaceHolderID="MainContent">
+    <%-- A property family and a DotVVM property, both on a plain HTML element: in a view an
+         element is an HtmlGenericControl, so this is ordinary DotVVM and not a mistake. --%>
+    <nav ID="menu" Class-collapsed="{value: MenuCollapsed}" Visible="{value: MenuVisible}">
+        <ul>
+            <li>
+                <dot:RouteLink RouteName="Detail"
+                               Param-Id="{value: SelectedId}"
+                               Validation.Enabled="false">
+                    {{resource: Labels.Home}}
+                </dot:RouteLink>
+            </li>
+            <li IncludeInPage="{value: UnreadCount > 0}">
+                <span class="badge">{{value: UnreadCount}}</span>
+            </li>
+        </ul>
+    </nav>
+
+    <dot:ContentPlaceHolder ID="PageContent" />
+</dot:Content>
