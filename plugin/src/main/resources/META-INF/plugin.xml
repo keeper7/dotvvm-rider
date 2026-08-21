@@ -27,6 +27,9 @@
 
     <multiHostInjector implementation="com.keeper7.dotvvm.binding.BindingInjector"/>
 
+    <lang.syntaxHighlighterFactory language="DotVVM"
+                                   implementationClass="com.keeper7.dotvvm.lang.DotvvmSyntaxHighlighterFactory"/>
+
     <lang.syntaxHighlighterFactory language="DotVVMBinding"
                                    implementationClass="com.keeper7.dotvvm.binding.BindingHighlighterFactory"/>
     <platform.lsp.integrationProvider
