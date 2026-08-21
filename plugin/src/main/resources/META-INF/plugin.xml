@@ -41,6 +41,9 @@
     <completion.contributor language="DotVVM"
                             implementationClass="com.keeper7.dotvvm.directive.DirectiveCompletionContributor"/>
 
+    <highlightErrorFilter
+        implementation="com.keeper7.dotvvm.directive.DirectiveErrorFilter"/>
+
     <additionalTextAttributes scheme="Default" file="colorSchemes/DotvvmDefault.xml"/>
   </extensions>
 </idea-plugin>
