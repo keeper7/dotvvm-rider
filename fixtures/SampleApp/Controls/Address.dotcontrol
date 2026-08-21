@@ -1,0 +1,30 @@
+﻿@viewModel System.Object
+@baseType SampleApp.Controls.Address, SampleApp
+@noWrapperTag
+
+<div class="address">
+    <label Class-required="{value: _control.Required}">{{resource: Labels.Street}}</label>
+    <dot:TextBox Text="{value: _control.Street}"
+                 Enabled="{value: _control.Enabled}"
+                 Validator.Value="{value: _control.Street}"
+                 Validator.InvalidCssClass="is-invalid"
+                 class="form-control" />
+
+    <label Class-required="{value: _control.Required}">{{resource: Labels.City}}</label>
+    <dot:TextBox Text="{value: _control.City}"
+                 Enabled="{value: _control.Enabled}"
+                 Validator.Value="{value: _control.City}"
+                 class="form-control" />
+
+    <%-- Quotes inside a binding end the attribute value as far as HTML is concerned, and the
+         binding runs over several lines as well. Both are valid DotVVM, and together they are
+         what AttributeQuoteMasker exists for. --%>
+    <dot:Button Text="{resource: Labels.Clear}"
+                Click="{staticCommand: _control.Street = "";
+                                       _control.City = "";
+                                       _control.PostalCode = ""}" />
+
+    <dot:Validator Value="{value: _control.Street}"
+                   ShowErrorMessageText="true"
+                   Validator.InvalidCssClass="invalid-feedback" />
+</div>

@@ -21,6 +21,9 @@ object DirectiveScanner {
         "baseType", "property", "noWrapperTag", "viewModule"
     )
 
+    /** Značka pořadí bajtů na začátku souborů uložených Visual Studiem. */
+    private const val BOM = '\uFEFF'
+
     fun scan(text: String): List<Directive> {
         val result = mutableListOf<Directive>()
         var offset = 0
@@ -29,8 +32,8 @@ object DirectiveScanner {
             val lineEnd = text.indexOf('\n', offset).let { if (it < 0) text.length else it }
             val line = text.substring(offset, lineEnd)
             val trimmedLine = line.trimEnd('\r')
-            val indent = trimmedLine.length - trimmedLine.trimStart().length
-            val content = trimmedLine.trimStart()
+            val content = trimmedLine.dropWhile { it.isWhitespace() || it == BOM }
+            val indent = trimmedLine.length - content.length
 
             when {
                 content.isEmpty() -> {
