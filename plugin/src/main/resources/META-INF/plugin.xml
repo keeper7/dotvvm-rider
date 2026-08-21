@@ -44,6 +44,9 @@
     <highlightErrorFilter
         implementation="com.keeper7.dotvvm.directive.DirectiveErrorFilter"/>
 
+    <annotator language="DotVVM"
+               implementationClass="com.keeper7.dotvvm.directive.DirectiveAnnotator"/>
+
     <additionalTextAttributes scheme="Default" file="colorSchemes/DotvvmDefault.xml"/>
   </extensions>
 </idea-plugin>
