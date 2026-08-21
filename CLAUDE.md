@@ -29,7 +29,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (32 after plan 3)
+./gradlew test                           # All tests (57 after plan 4)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -101,6 +101,27 @@ The validator reports an unknown *prefix* only when the registry came from a sou
 see the project's own prefixes (`IConfigurationSource.KnowsProjectPrefixes`). Built-in defaults
 cannot, so on tier 1 a `<cc:MyControl>` stays silent while `<dot:NoSuchControl>` is still
 flagged — standard controls are known even there.
+
+## Directives
+
+Directives (`@viewModel`, `@masterPage`, …) live at the top of the file and the HTML parser
+sees them as plain text — so `<!DOCTYPE>` after them is `Unexpected tokens`. `DirectiveScanner`
+finds them and, like `BindingScanner`, stays free of IntelliJ API.
+
+**Do not give them their own node in the tree.** Emitting the block as a token — even a
+well-formed XML comment the parser accepts — pushes `XML_PROLOG` out of first place, and the
+platform then loses the HTML schema and reports `<html>` and `<div>` as unknown tags. That
+trades one message per file for a squiggle under every tag. `DirectiveErrorFilter` instead
+leaves the tree alone and hides just that one error; the `PsiErrorElement` stays in the PSI,
+invisible to the user.
+
+Highlighting and navigation therefore hang off text offsets, not off a directive node —
+`DirectiveAnnotator` annotates the file element, and `MasterPageNavigationHandler` resolves
+`@masterPage`, `@js` and `@viewModule` against the project's content roots. Directives naming
+a .NET type (`@viewModel`, `@baseType`) stay with the server, which alone has the registry.
+
+`HtmlUnknownTagInspection` cannot be tested here: the test IU has no HTML schema at all, so it
+reports `<html>` as unknown even for untouched files. Anything about schema needs the sandbox.
 
 ## Testing
 
