@@ -63,7 +63,7 @@ public class HoverHandler : IHoverHandler
             if (control.Properties.Count > 0)
             {
                 lines.Add("");
-                lines.Add("Vlastnosti: " + string.Join(", ", control.Properties.Take(15)
+                lines.Add("Properties: " + string.Join(", ", control.Properties.Take(15)
                     .Select(p => $"`{p}`")));
             }
         }

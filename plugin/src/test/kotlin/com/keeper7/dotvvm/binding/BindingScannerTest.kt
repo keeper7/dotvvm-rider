@@ -70,7 +70,7 @@ class BindingScannerTest {
         for (kw in listOf("value", "command", "staticCommand", "resource",
                           "controlProperty", "controlCommand", "_control", "_parent", "_root")) {
             val s = "{$kw: X}"
-            assertEquals("selhalo pro $kw", 1, scan(s).size)
+            assertEquals("failed for $kw", 1, scan(s).size)
         }
     }
 }

@@ -5,8 +5,8 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 /**
  * Extends BasePlatformTestCase because IElementType registers itself in a global platform
- * registry; in a plain JUnit test without an Application its construction
- * BindingTokenType selhala.
+ * registry; in a plain JUnit test without an Application the construction of
+ * BindingTokenType fails.
  *
  * BindingScannerTest, by contrast, is a plain JUnit test because the scanner uses no IntelliJ
  * API at all. That split is deliberate and described in the file structure.

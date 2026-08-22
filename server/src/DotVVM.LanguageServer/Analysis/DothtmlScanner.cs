@@ -62,7 +62,7 @@ public static class DothtmlScanner
 
             if (j >= text.Length || text[j] != ':')
             {
-                i = nameStart;                        // tag bez prefixu
+                i = nameStart;                        // a tag without a prefix
                 continue;
             }
 

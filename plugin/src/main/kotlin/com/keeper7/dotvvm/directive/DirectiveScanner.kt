@@ -1,6 +1,6 @@
 package com.keeper7.dotvvm.directive
 
-/** Jedna direktiva i s rozsahem v textu souboru. */
+/** One directive, together with its range in the file's text. */
 data class Directive(val name: String, val value: String, val start: Int, val end: Int)
 
 /**
