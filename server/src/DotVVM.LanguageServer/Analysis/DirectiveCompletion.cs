@@ -30,11 +30,15 @@ public static class DirectiveCompletion
         "baseType" => Types(registry.Controls.Select(c => c.FullTypeName), "control"),
         "import" or "resourceNamespace" => Namespaces(registry.Types.Namespaces),
         "masterPage" => Paths(files, ".dotmaster"),
-        "js" => Paths(files, ".js"),
 
         // @service and @resourceType name any type of the project, which the registry does not
         // hold - it knows controls and view models, not the rest. Two occurrences in a real
         // project, so this is a decision, not an oversight.
+        //
+        // @js is not a path either, however much it looks like one: it names a **resource**
+        // registered in DotvvmStartup, which is why ViewModuleDirectiveCompiler takes a
+        // DotvvmResourceRepository and the resolved directive carries ImportedResourceName.
+        // Offering .js files listed off the disk produced entries like `build-docker.js`.
         _ => Array.Empty<DirectiveSuggestion>(),
     };
 
