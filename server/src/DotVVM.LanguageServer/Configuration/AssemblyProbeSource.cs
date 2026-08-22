@@ -204,23 +204,38 @@ public sealed class AssemblyProbeSource : IConfigurationSource
                 FullTypeName: fullTypeName,
                 BaseType: Str(item, "BaseType"),
                 DefaultContentProperty: Str(item, "DefaultContentProperty"),
-                Properties: Strings(item, "Properties")));
+                Properties: ReadProperties(item)));
         }
 
         return result;
     }
 
-    private static List<string> Strings(JsonElement element, string name)
+    private static List<ControlProperty> ReadProperties(JsonElement element)
     {
-        if (!element.TryGetProperty(name, out var array) || array.ValueKind != JsonValueKind.Array)
+        var result = new List<ControlProperty>();
+
+        if (!element.TryGetProperty("Properties", out var array) ||
+            array.ValueKind != JsonValueKind.Array)
         {
-            return new List<string>();
+            return result;
         }
 
-        return array.EnumerateArray()
-            .Where(v => v.ValueKind == JsonValueKind.String)
-            .Select(v => v.GetString()!)
-            .ToList();
+        foreach (var item in array.EnumerateArray())
+        {
+            var name = Str(item, "Name");
+            if (name is null) continue;
+
+            result.Add(new ControlProperty(
+                Name: name,
+                Usage: Enum.TryParse<PropertyUsage>(Str(item, "Usage"), out var usage)
+                    ? usage : PropertyUsage.Attribute,
+                Value: Enum.TryParse<PropertyValue>(Str(item, "Value"), out var value)
+                    ? value : PropertyValue.Any,
+                Required: item.TryGetProperty("Required", out var required) &&
+                          required.ValueKind == JsonValueKind.True,
+                TypeName: Str(item, "TypeName")));
+        }
+        return result;
     }
 
     private static string? Str(JsonElement element, string name) =>

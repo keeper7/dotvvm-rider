@@ -9,7 +9,8 @@ public class MarkupControlResolverTests
     private static ControlRegistry RegistryWithMarkupControl() => new(
         new[] { new ControlRegistration("cc", null, null, "Widget", "Controls/Widget.dotcontrol") },
         new[] { new ControlInfo("App.Controls.Widget", "DotvvmMarkupControl", null,
-                                new[] { "Data", "Visible" }) });
+                                new[] { new ControlProperty("Data"),
+                                        new ControlProperty("Visible") }) });
 
     private static Func<string, string?> FileAt(string path, string content) =>
         candidate => candidate.Replace('\\', '/') == path ? content : null;
@@ -25,7 +26,7 @@ public class MarkupControlResolverTests
 
         var control = resolved.GetControl("cc", "Widget");
         Assert.NotNull(control);
-        Assert.Contains("Data", control!.Properties);
+        Assert.Contains(control!.Properties, p => p.Name == "Data");
     }
 
     [Fact]
@@ -110,7 +111,8 @@ public class MarkupControlResolverTests
     {
         var registry = new ControlRegistry(
             new[] { new ControlRegistration("dot", "DotVVM.Framework.Controls", "DotVVM.Framework", null, null) },
-            new[] { new ControlInfo("DotVVM.Framework.Controls.Repeater", null, null, new[] { "Visible" }) });
+            new[] { new ControlInfo("DotVVM.Framework.Controls.Repeater", null, null,
+                                    new[] { new ControlProperty("Visible") }) });
 
         var resolved = MarkupControlResolver.Resolve(
             registry, "/project", readFile: _ => throw new InvalidOperationException("must not read"));

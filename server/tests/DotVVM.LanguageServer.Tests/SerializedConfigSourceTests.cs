@@ -1,4 +1,5 @@
 using DotVVM.LanguageServer.Configuration;
+using DotVVM.LanguageServer.Model;
 using Xunit;
 
 namespace DotVVM.LanguageServer.Tests;
@@ -59,9 +60,37 @@ public class SerializedConfigSourceTests : IDisposable
         var registry = await new SerializedConfigSource().LoadAsync(_dir, default);
         var button = registry!.GetControl("dot", "Button");
         Assert.NotNull(button);
-        Assert.Contains("Text", button!.Properties);
-        Assert.Contains("Click", button.Properties);
-        Assert.DoesNotContain("Value", button.Properties);
+        Assert.Contains(button!.Properties, p => p.Name == "Text");
+        Assert.Contains(button.Properties, p => p.Name == "Click");
+        Assert.DoesNotContain(button.Properties, p => p.Name == "Value");
+    }
+
+    [Fact]
+    public async Task ReadsHowAPropertyMayBeWritten()
+    {
+        var registry = await new SerializedConfigSource().LoadAsync(_dir, default);
+        var props = registry!.GetControl("dot", "Repeater")!.Properties;
+
+        var template = props.Single(p => p.Name == "ItemTemplate");
+        Assert.Equal(PropertyUsage.InnerElement, template.Usage);
+        Assert.True(template.Required);
+
+        Assert.Equal(PropertyValue.BindingOnly, props.Single(p => p.Name == "DataSource").Value);
+        Assert.Equal(PropertyValue.HardCodedOnly, props.Single(p => p.Name == "WrapperTagName").Value);
+        Assert.Equal("System.Object", props.Single(p => p.Name == "DataSource").TypeName);
+    }
+
+    /// <summary>
+    /// MappingMode.Exclude means the property is never written in markup - ClientID and its
+    /// kind. Dropping it here keeps every later stage from having to know about it.
+    /// </summary>
+    [Fact]
+    public async Task LeavesOutThePropertiesThatAreNeverWritten()
+    {
+        var registry = await new SerializedConfigSource().LoadAsync(_dir, default);
+
+        Assert.DoesNotContain(registry!.GetControl("dot", "Repeater")!.Properties,
+                              p => p.Name == "ClientID");
     }
 
     [Fact]
@@ -113,6 +142,6 @@ public class SerializedConfigSourceTests : IDisposable
         // Without this assertion a parser unaware of them would pass and hover would stay empty.
         var button = registry.GetControl("dot", "Button");
         Assert.NotNull(button);
-        Assert.Contains("ButtonTagName", button!.Properties);
+        Assert.Contains(button!.Properties, p => p.Name == "ButtonTagName");
     }
 }

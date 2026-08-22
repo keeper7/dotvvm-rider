@@ -1,4 +1,5 @@
 using DotVVM.LanguageServer.Configuration;
+using DotVVM.LanguageServer.Model;
 using Xunit;
 
 namespace DotVVM.LanguageServer.Tests;
@@ -53,7 +54,12 @@ public class AssemblyProbeSourceTests
                 {"FullTypeName":"DotVVM.Framework.Controls.Repeater",
                  "BaseType":"DotVVM.Framework.Controls.ItemsControl",
                  "DefaultContentProperty":null,
-                 "Properties":["DataContext","DataSource","ItemTemplate","Visible"]}
+                 "Properties":[
+                   {"Name":"DataContext","Usage":"Attribute","Value":"BindingOnly","Required":false,"TypeName":"System.Object"},
+                   {"Name":"DataSource","Usage":"Attribute","Value":"BindingOnly","Required":false,"TypeName":"System.Object"},
+                   {"Name":"ItemTemplate","Usage":"InnerElement","Value":"HardCodedOnly","Required":true,"TypeName":"DotVVM.Framework.Controls.ITemplate"},
+                   {"Name":"Visible","Usage":"Attribute","Value":"Any","Required":false,"TypeName":"System.Boolean"}
+                 ]}
               ]
             }
             """;
@@ -62,8 +68,15 @@ public class AssemblyProbeSourceTests
 
         var control = registry!.GetControl("dot", "Repeater");
         Assert.NotNull(control);
-        Assert.Contains("Visible", control!.Properties);
-        Assert.Contains("ItemTemplate", control.Properties);
+        Assert.Contains(control!.Properties, p => p.Name == "Visible");
+
+        // The metadata is what makes the name usable: a template is a child element, not an
+        // attribute, and DataSource takes nothing but a binding.
+        var template = control.Properties.Single(p => p.Name == "ItemTemplate");
+        Assert.Equal(PropertyUsage.InnerElement, template.Usage);
+        Assert.True(template.Required);
+        Assert.Equal(PropertyValue.BindingOnly,
+                     control.Properties.Single(p => p.Name == "DataSource").Value);
     }
 
     /// <summary>
@@ -130,9 +143,9 @@ public class AssemblyProbeSourceTests
         // lives in DotVVM.Framework, so this also proves the registered assemblies are scanned.
         var repeater = registry.GetControl("dot", "Repeater");
         Assert.NotNull(repeater);
-        Assert.Contains("ItemTemplate", repeater!.Properties);
+        Assert.Contains(repeater!.Properties, p => p.Name == "ItemTemplate");
         // Inherited from the base classes; without the whole class-constructor chain it is absent
-        Assert.Contains("Visible", repeater.Properties);
+        Assert.Contains(repeater.Properties, p => p.Name == "Visible");
     }
 
     /// <summary>
@@ -161,7 +174,7 @@ public class AssemblyProbeSourceTests
         var control = result.Registry.GetControl("cc", "MyControl");
         Assert.NotNull(control);
         Assert.Equal("SampleApp.Controls.MyControl", control!.FullTypeName);
-        Assert.Contains("Caption", control.Properties);
+        Assert.Contains(control.Properties, p => p.Name == "Caption");
     }
 
     /// <summary>

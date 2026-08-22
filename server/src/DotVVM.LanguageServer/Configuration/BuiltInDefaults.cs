@@ -53,8 +53,12 @@ public sealed class BuiltInDefaults : IConfigurationSource
             new ControlRegistration("dot", Ns, "DotVVM.Framework", null, null)
         };
 
-        var controls = Controls.Select(c =>
-            new ControlInfo($"{Ns}.{c.Tag}", "DotvvmControl", null, c.Props));
+        // Tier 1 knows the names and nothing else, and must not pretend otherwise: the
+        // defaults of ControlProperty describe the ordinary attribute, which is what it can
+        // honestly claim.
+        var controls = Controls.Select(c => new ControlInfo(
+            $"{Ns}.{c.Tag}", "DotvvmControl", null,
+            c.Props.Select(p => new ControlProperty(p)).ToList()));
 
         return Task.FromResult<ControlRegistry?>(new ControlRegistry(registrations, controls));
     }

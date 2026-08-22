@@ -15,9 +15,10 @@ public class ControlRegistryTests
         controls: new[]
         {
             new ControlInfo("DotVVM.Framework.Controls.Button", "DotvvmControl", null,
-                            new[] { "Text", "Click", "Enabled" }),
+                            new[] { new ControlProperty("Text"), new ControlProperty("Click"),
+                                    new ControlProperty("Enabled") }),
             new ControlInfo("MyApp.Controls.Widget", "DotvvmControl", "ContentTemplate",
-                            new[] { "Value" }),
+                            new[] { new ControlProperty("Value") }),
         });
 
     [Fact]
@@ -64,7 +65,7 @@ public class ControlRegistryTests
     {
         var control = BuildRegistry().GetControl("dot", "Button");
         Assert.NotNull(control);
-        Assert.Contains("Text", control!.Properties);
+        Assert.Contains(control!.Properties, p => p.Name == "Text");
     }
 
     [Fact]
@@ -89,7 +90,7 @@ public class ControlRegistryTests
     {
         var controls = new[]
         {
-            new ControlInfo("App.Controls.Widget", null, null, new[] { "Data" })
+            new ControlInfo("App.Controls.Widget", null, null, new[] { new ControlProperty("Data") })
         };
 
         var unresolved = new ControlRegistry(

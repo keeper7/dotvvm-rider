@@ -22,7 +22,8 @@ public class ControlHoverTextTests
         var registry = new ControlRegistry(
             new[] { Namespaced("dot", "DotVVM.Framework.Controls") },
             new[] { new ControlInfo("DotVVM.Framework.Controls.Repeater", null, "ItemTemplate",
-                                    new[] { "DataSource", "Visible" }) });
+                                    new[] { new ControlProperty("DataSource"),
+                                            new ControlProperty("Visible") }) });
 
         var text = Build(registry, "dot", "Repeater");
 
@@ -38,7 +39,8 @@ public class ControlHoverTextTests
         var registry = new ControlRegistry(
             new[] { Namespaced("dot", "Ns") },
             new[] { new ControlInfo("Ns.Big", null, null,
-                                    Enumerable.Range(0, 20).Select(i => $"P{i}").ToList()) });
+                                    Enumerable.Range(0, 20)
+                                        .Select(i => new ControlProperty($"P{i}")).ToList()) });
 
         var text = Build(registry, "dot", "Big");
 
@@ -115,7 +117,8 @@ public class ControlHoverTextTests
     {
         var registry = new ControlRegistry(
             new[] { Markup("cc", "Widget", baseType: "App.Controls.Widget") },
-            new[] { new ControlInfo("App.Controls.Widget", null, null, new[] { "Data" }) });
+            new[] { new ControlInfo("App.Controls.Widget", null, null,
+                                    new[] { new ControlProperty("Data") }) });
 
         var text = Build(registry, "cc", "Widget");
 
@@ -133,7 +136,7 @@ public class ControlHoverTextTests
     {
         var registry = new ControlRegistry(
             new[] { Namespaced("dot", "Ns") },
-            new[] { new ControlInfo("Ns.Button", null, null, Array.Empty<string>()) });
+            new[] { new ControlInfo("Ns.Button", null, null, Array.Empty<ControlProperty>()) });
 
         var text = Build(registry, "dot", "Button");
 

@@ -19,7 +19,8 @@ public class ProjectConfigurationProviderTests
 
     private static ControlRegistry RegistryWithPrefix(string prefix) => new(
         new[] { new ControlRegistration(prefix, $"Ns.{prefix}", "Asm", null, null) },
-        new[] { new ControlInfo($"Ns.{prefix}.Thing", null, null, new[] { "P" }) });
+        new[] { new ControlInfo($"Ns.{prefix}.Thing", null, null,
+                new[] { new ControlProperty("P") }) });
 
     [Fact]
     public async Task UsesHighestAvailableTier()

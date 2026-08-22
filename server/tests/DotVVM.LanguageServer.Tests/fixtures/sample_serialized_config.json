@@ -3,10 +3,26 @@
   "config": {
     "markup": {
       "controls": [
-        { "tagPrefix": "dot", "namespace": "DotVVM.Framework.Controls", "assembly": "DotVVM.Framework" },
-        { "tagPrefix": "cc", "namespace": "MyApp.Controls", "assembly": "MyApp, Version=1.0.0.0" },
-        { "tagPrefix": "cc", "tagName": "Address", "src": "Controls/Address/Address.dotcontrol" },
-        { "tagPrefix": "bp", "namespace": "DotVVM.BusinessPack.Controls", "assembly": "DotVVM.BusinessPack" }
+        {
+          "tagPrefix": "dot",
+          "namespace": "DotVVM.Framework.Controls",
+          "assembly": "DotVVM.Framework"
+        },
+        {
+          "tagPrefix": "cc",
+          "namespace": "MyApp.Controls",
+          "assembly": "MyApp, Version=1.0.0.0"
+        },
+        {
+          "tagPrefix": "cc",
+          "tagName": "Address",
+          "src": "Controls/Address/Address.dotcontrol"
+        },
+        {
+          "tagPrefix": "bp",
+          "namespace": "DotVVM.BusinessPack.Controls",
+          "assembly": "DotVVM.BusinessPack"
+        }
       ],
       "importedNamespaces": [],
       "assemblies": []
@@ -21,15 +37,46 @@
       "assembly": "MyApp",
       "baseType": "DotVVM.Framework.Controls.DotvvmControl, DotVVM.Framework",
       "defaultContentProperty": "ContentTemplate"
+    },
+    "DotVVM.Framework.Controls.Repeater": {
+      "assembly": "DotVVM.Framework",
+      "baseType": "DotVVM.Framework.Controls.ItemsControl, DotVVM.Framework"
     }
   },
   "properties": {
     "DotVVM.Framework.Controls.Button": {
-      "Text": { "type": "System.String" },
-      "Click": { "type": "DotVVM.Framework.Binding.Expressions.Command" }
+      "Text": {
+        "type": "System.String"
+      },
+      "Click": {
+        "type": "DotVVM.Framework.Binding.Expressions.Command"
+      }
     },
     "MyApp.Controls.Widget": {
-      "Value": { "type": "System.String" }
+      "Value": {
+        "type": "System.String"
+      }
+    },
+    "DotVVM.Framework.Controls.Repeater": {
+      "ItemTemplate": {
+        "type": "DotVVM.Framework.Controls.ITemplate, DotVVM.Framework",
+        "mappingMode": "InnerElement",
+        "required": true,
+        "onlyHardcoded": true
+      },
+      "DataSource": {
+        "type": "System.Object",
+        "onlyBindings": true
+      },
+      "WrapperTagName": {
+        "type": "System.String",
+        "defaultValue": "div",
+        "onlyHardcoded": true
+      },
+      "ClientID": {
+        "type": "System.String",
+        "mappingMode": "Exclude"
+      }
     }
   },
   "propertyGroups": {},

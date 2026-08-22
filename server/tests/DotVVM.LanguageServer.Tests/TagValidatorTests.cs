@@ -14,7 +14,8 @@ public class TagValidatorTests
         },
         new[]
         {
-            new ControlInfo("DotVVM.Framework.Controls.Button", null, null, new[] { "Text" }),
+            new ControlInfo("DotVVM.Framework.Controls.Button", null, null,
+                            new[] { new ControlProperty("Text") }),
         });
 
     [Fact]
