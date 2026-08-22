@@ -18,7 +18,9 @@ import com.keeper7.dotvvm.lang.DotMasterFileType
  */
 class MasterPageNavigationHandler : GotoDeclarationHandler {
 
-    private val fileDirectives = setOf("masterPage", "js", "viewModule")
+    /** The directives whose value is a path. `js` is the view module one; `viewModule` is not
+     *  a DotVVM directive at all, and navigating from it was dead code. */
+    private val fileDirectives = setOf("masterPage", "js")
 
     override fun getGotoDeclarationTargets(
         sourceElement: PsiElement?,

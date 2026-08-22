@@ -91,4 +91,25 @@ class DirectiveScannerTest {
     @Test fun knownNamesContainViewModel() {
         assertTrue(DirectiveScanner.KNOWN_NAMES.contains("viewModel"))
     }
+
+    @Test fun knowsExactlyTheDirectivesDotvvmDefines() {
+        // The source of truth is ParserConstants in DotVVM.Framework 4.3.17, read by
+        // reflection. The parser reports no error for an unknown name — @totalNonsense
+        // parses cleanly — so this list is the only place a typo is caught.
+        assertEquals(
+            setOf("viewModel", "masterPage", "baseType", "resourceType", "resourceNamespace",
+                  "import", "wrapperTag", "noWrapperTag", "service", "js", "property"),
+            DirectiveScanner.KNOWN_NAMES.toSet())
+    }
+
+    @Test fun recognisesTheDirectivesThatWereMissing() {
+        val names = DirectiveScanner.scan("@wrapperTag div\n@resourceType Default\n<html></html>")
+            .map { it.name }
+        assertEquals(listOf("wrapperTag", "resourceType"), names)
+    }
+
+    @Test fun doesNotRecogniseViewModule() {
+        // There is no `viewModule` directive in DotVVM; the one that exists is `js`
+        assertTrue(DirectiveScanner.scan("@viewModule Foo.js\n<html></html>").isEmpty())
+    }
 }
