@@ -44,6 +44,9 @@
 
     <lang.syntaxHighlighterFactory language="DotVVMBinding"
                                    implementationClass="com.keeper7.dotvvm.binding.BindingHighlighterFactory"/>
+
+    <lang.commenter language="DotVVM"
+                    implementationClass="com.keeper7.dotvvm.comment.DotvvmCommenter"/>
     <platform.lsp.integrationProvider
         implementation="com.keeper7.dotvvm.lsp.DotvvmLspIntegrationProvider"/>
 
