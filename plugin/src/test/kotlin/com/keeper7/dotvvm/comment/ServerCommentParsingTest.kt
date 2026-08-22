@@ -97,4 +97,19 @@ class ServerCommentParsingTest : BasePlatformTestCase() {
         val text = "<th <%-- width=\"30%\" --%>>x</th>"
         assertEquals(text, myFixture.configureByText("Test.dothtml", text).text)
     }
+
+    fun testMultilineCommentBetweenAttributesKeepsTheLines() {
+        // The shape the fixture carries: a comment inside a tag running over two lines.
+        // Blanking its line break would move every line number after it, and both the LSP
+        // diagnostics and the editor address text by line and column.
+        val text = "<th class=\"wide\" <%-- Sortable=\"true\"\n   Direction=\"Asc\" --%> id=\"x\">y</th>"
+        val file = myFixture.configureByText("Test.dothtml", text)
+
+        assertEmpty(PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java))
+        val tag = PsiTreeUtil.findChildOfType(file, XmlTag::class.java)!!
+        assertEquals("wide", tag.getAttribute("class")?.value)
+        assertEquals("x", tag.getAttribute("id")?.value)
+        assertNull(tag.getAttribute("Sortable"))
+        assertEquals(text, file.text)
+    }
 }
