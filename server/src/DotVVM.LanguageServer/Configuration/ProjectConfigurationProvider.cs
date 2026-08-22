@@ -58,6 +58,14 @@ public sealed class ProjectConfigurationProvider
             knowsProjectPrefixes |= source.KnowsProjectPrefixes;
         }
 
+        // Only now are all the sources merged, so a markup control can be matched against a type
+        // that a different tier contributed.
+        var root = ProjectRoot.Find(projectDir);
+        if (root is not null)
+        {
+            registry = MarkupControlResolver.Resolve(registry, root, MarkupControlResolver.ReadFile);
+        }
+
         return new ConfigurationResult(registry, sourceName, knowsProjectPrefixes);
     }
 }

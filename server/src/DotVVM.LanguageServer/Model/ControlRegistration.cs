@@ -9,7 +9,13 @@ public record ControlRegistration(
     string? Namespace,
     string? Assembly,
     string? TagName,
-    string? Src)
+    string? Src,
+    /// <summary>
+    /// The code-behind class of a markup control, read from @baseType in the file Src names.
+    /// Filled in by MarkupControlResolver once all the tiers are merged; null until then, and
+    /// null for a control whose file declares no base type.
+    /// </summary>
+    string? BaseTypeName = null)
 {
     public bool IsMarkupControl => TagName is not null && Src is not null;
 }

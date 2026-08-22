@@ -136,6 +136,35 @@ public class AssemblyProbeSourceTests
     }
 
     /// <summary>
+    /// The whole chain a markup control needs: the probe finds the code-behind type, the
+    /// provider merges the tiers, and the resolver connects the two through @baseType. Nothing
+    /// short of this proves it, because each half looks correct on its own.
+    /// Skipped until the fixture has been built.
+    /// </summary>
+    [Fact]
+    public async Task ResolvesMarkupControlPropertiesFromBuiltFixtureApp()
+    {
+        var repoRoot = FindRepositoryRoot();
+        if (repoRoot is null) return;
+
+        var appDir = Path.Combine(repoRoot, "fixtures", "SampleApp");
+        if (!File.Exists(Path.Combine(appDir, "bin", "Debug", "net8.0", "SampleApp.dll"))) return;
+
+        if (!FindDeployedProbes().TryGetValue("net8.0", out var probe)) return;
+
+        var provider = new ProjectConfigurationProvider(
+            new IConfigurationSource[] { new AssemblyProbeSource(probe) });
+
+        var result = await provider.GetAsync(appDir, default);
+
+        // cc:MyControl is a markup control: no namespace, so only @baseType can lead to its type
+        var control = result.Registry.GetControl("cc", "MyControl");
+        Assert.NotNull(control);
+        Assert.Equal("SampleApp.Controls.MyControl", control!.FullTypeName);
+        Assert.Contains("Caption", control.Properties);
+    }
+
+    /// <summary>
     /// Finds the probe variants in the server project's output. The layout is
     /// probe/&lt;tfm&gt;/DotVVM.LanguageServer.Probe.dll, keyed by the TFM folder name.
     /// </summary>

@@ -1,2 +1,3 @@
 @viewModel SampleApp.ViewModels.MyControlViewModel, SampleApp
+@baseType SampleApp.Controls.MyControl, SampleApp
 <div class="my-control">{{value: Value}}</div>
