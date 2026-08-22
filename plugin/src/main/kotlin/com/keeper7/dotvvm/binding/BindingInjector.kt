@@ -5,7 +5,9 @@ import com.intellij.lang.injection.MultiHostRegistrar
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLanguageInjectionHost
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlAttributeValue
+import com.intellij.psi.xml.XmlComment
 import com.intellij.psi.xml.XmlText
 import com.keeper7.dotvvm.lang.DotControlFileType
 import com.keeper7.dotvvm.lang.DotHtmlFileType
@@ -31,18 +33,31 @@ class BindingInjector : MultiHostInjector {
         if (inner.isEmpty) return
 
         val text = context.text.substring(inner.startOffset, inner.endOffset)
-        val matches = BindingScanner.scan(text)
-        if (matches.isEmpty()) return
+        val commented = commentRangesIn(context)
+        val places = BindingScanner.scan(text)
+            .map { TextRange(inner.startOffset + it.start, inner.startOffset + it.end) }
+            .filterNot { place -> commented.any { it.intersects(place) } }
+        if (places.isEmpty()) return
 
         // One injected file per host, with several places inside it
         registrar.startInjecting(BindingLanguage.INSTANCE)
-        for (m in matches) {
-            registrar.addPlace(
-                null, null, context,
-                TextRange(inner.startOffset + m.start, inner.startOffset + m.end)
-            )
+        for (place in places) {
+            registrar.addPlace(null, null, context, place)
         }
         registrar.doneInjecting()
+    }
+
+    /**
+     * The comments inside the host, in the host's own coordinates.
+     *
+     * A server-side comment ends up as an `XmlComment` **inside** an `XmlText`, so the host we
+     * are injecting into spans it. Without this a commented-out binding would still be treated
+     * as code — highlighted, resolved and navigable, in text that never reaches the browser.
+     */
+    private fun commentRangesIn(context: PsiElement): List<TextRange> {
+        val start = context.textRange.startOffset
+        return PsiTreeUtil.findChildrenOfType(context, XmlComment::class.java)
+            .map { it.textRange.shiftLeft(start) }
     }
 
     private fun isDotvvmFile(context: PsiElement): Boolean {

@@ -8,7 +8,7 @@ class ServerCommentMaskerTest {
 
     @Test fun masksOpenerAndCloser() {
         val masked = ServerCommentMasker.mask("<%-- hello --%>").toString()
-        assertEquals("<!-- hello --> ", masked)
+        assertEquals("<!-- hello  -->", masked)
     }
 
     @Test fun keepsLengthCharacterForCharacter() {
@@ -18,13 +18,13 @@ class ServerCommentMaskerTest {
 
     @Test fun masksSeveralComments() {
         val masked = ServerCommentMasker.mask("<%-- a --%>x<%-- b --%>").toString()
-        assertEquals("<!-- a --> x<!-- b --> ", masked)
+        assertEquals("<!-- a  -->x<!-- b  -->", masked)
     }
 
     @Test fun handlesMultilineComment() {
         val text = "<%--\n  <dot:Button />\n--%>"
         val masked = ServerCommentMasker.mask(text).toString()
-        assertEquals("<!--\n  <dot:Button />\n--> ", masked)
+        assertEquals("<!--\n  <dot:Button />\n -->", masked)
         assertEquals(text.length, masked.length)
     }
 

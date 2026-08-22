@@ -1,7 +1,9 @@
 package com.keeper7.dotvvm.comment
 
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.xml.XmlComment
 import com.intellij.psi.xml.XmlTag
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
@@ -39,5 +41,31 @@ class ServerCommentParsingTest : BasePlatformTestCase() {
         val file = myFixture.configureByText("Test.dothtml", text)
         assertEmpty(PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java))
         assertEquals(text, file.text)
+    }
+
+    fun testBindingInsideCommentIsNotInjected() {
+        // A comment is one token, so there is no XmlText or XmlAttributeValue to inject into —
+        // a commented-out binding must not be treated as code
+        val file = myFixture.configureByText(
+            "Test.dothtml", "<div><%-- {{value: Name}} --%></div>")
+
+        val manager = InjectedLanguageManager.getInstance(project)
+        val languages = mutableListOf<String>()
+        PsiTreeUtil.processElements(file) { element ->
+            manager.getInjectedPsiFiles(element)?.forEach { languages.add(it.first.language.id) }
+            true
+        }
+        assertFalse("A binding inside a comment was injected: $languages",
+                    languages.contains("DotVVMBinding"))
+    }
+
+    fun testCommentElementCoversTheWholeMarker() {
+        // The padding space belongs before the closer. With it after, the comment ended one
+        // character early and the final '>' fell out as whitespace — unpainted in the editor.
+        val text = "<div><%-- note --%></div>"
+        val file = myFixture.configureByText("Test.dothtml", text)
+
+        val comment = PsiTreeUtil.findChildOfType(file, XmlComment::class.java)!!
+        assertEquals("<%-- note --%>", comment.text)
     }
 }
