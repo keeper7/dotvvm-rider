@@ -27,7 +27,9 @@ class DirectiveAutoPopupTest : BasePlatformTestCase() {
         myFixture.completeBasic()
 
         val suggestions = myFixture.lookupElementStrings ?: emptyList()
-        assertContainsElements(suggestions, "viewModel", "viewModule")
+        assertContainsElements(suggestions, "viewModel")
         assertDoesntContain(suggestions, "video", "var")
+        // `viewModule` is not a DotVVM directive — the view module one is called `js`
+        assertDoesntContain(suggestions, "viewModule")
     }
 }

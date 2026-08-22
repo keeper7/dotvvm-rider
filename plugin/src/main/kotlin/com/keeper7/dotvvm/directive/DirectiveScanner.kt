@@ -13,12 +13,18 @@ data class Directive(val name: String, val value: String, val start: Int, val en
 object DirectiveScanner {
 
     /**
-     * The directives DotVVM knows. An unknown name is not treated as a directive; otherwise
-     * the scanner would swallow any text starting with an at sign and hide it from the parser.
+     * The directives DotVVM knows, taken from `ParserConstants` in `DotVVM.Framework`. An
+     * unknown name is not treated as a directive; otherwise the scanner would swallow any text
+     * starting with an at sign and hide it from the parser.
+     *
+     * The parser itself accepts **any** name — `@totalNonsense Something` produces a
+     * well-formed directive node with no error, and only compiling the view rejects it. This
+     * list is therefore the one place where a typo is caught, which is why it is worth keeping
+     * exactly in step with the framework.
      */
     val KNOWN_NAMES = listOf(
-        "viewModel", "masterPage", "import", "service", "js",
-        "baseType", "property", "noWrapperTag", "viewModule"
+        "viewModel", "masterPage", "baseType", "resourceType", "resourceNamespace",
+        "import", "wrapperTag", "noWrapperTag", "service", "js", "property"
     )
 
     /** Byte order mark at the start of files saved by Visual Studio. */
