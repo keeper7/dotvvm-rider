@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Hover reports the properties of the project's own controls. The assembly source now reads the
+  control types themselves, not merely their registrations, and a markup control is connected to
+  its code-behind class through the `@baseType` directive - which is where its properties live,
+  since a `.dotcontrol` file declares none.
+
+### Fixed
+
+- `@viewModel` navigation on a file starting with a byte order mark. U+FEFF is not whitespace to
+  .NET, so the directive was never recognised - and every real file has one.
+
 ## [0.1.0] – 2026-08-22
 
 First release. The plugin treats `.dothtml`, `.dotmaster` and `.dotcontrol` as a superset

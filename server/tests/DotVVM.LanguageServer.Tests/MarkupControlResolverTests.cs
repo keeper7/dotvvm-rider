@@ -84,6 +84,27 @@ public class MarkupControlResolverTests
         Assert.Equal("/project/Controls/Widget.dotcontrol", asked?.Replace('\\', '/'));
     }
 
+    /// <summary>
+    /// DotVVM registers two diagnostics controls of its own with an embedded:// Src. They are
+    /// not files, so the resolver must not go looking for them below the project root.
+    /// </summary>
+    [Fact]
+    public void SkipsAnEmbeddedSource()
+    {
+        var registry = new ControlRegistry(
+            new[]
+            {
+                new ControlRegistration("dotvvm-internal", null, null, "CompilationDiagnostic",
+                    "embedded://DotVVM.Framework/Diagnostics/CompilationDiagnostic.dotcontrol")
+            },
+            Array.Empty<ControlInfo>());
+
+        var resolved = MarkupControlResolver.Resolve(
+            registry, "/project", readFile: _ => throw new InvalidOperationException("must not read"));
+
+        Assert.True(resolved.IsKnownTag("dotvvm-internal", "CompilationDiagnostic"));
+    }
+
     [Fact]
     public void LeavesTypedRegistrationsUntouched()
     {
