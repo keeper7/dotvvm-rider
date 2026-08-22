@@ -31,6 +31,9 @@ public record CompletionContext(
 /// </summary>
 public static class CompletionContextScanner
 {
+    private const string CommentOpen = "<%--";
+    private const string CommentClose = "--%>";
+
     public static CompletionContext Detect(string text, int line, int character)
     {
         var offset = OffsetOf(text, line, character);
@@ -107,6 +110,24 @@ public static class CompletionContextScanner
             while (i < limit && char.IsWhiteSpace(text[i])) i++;
             if (i >= limit) break;
 
+            // A server-side comment between attributes. DotVVM allows it — verified against
+            // its own tokenizer — and what it hides is not written on the tag, so it must
+            // neither stop the walk nor count among the attributes.
+            if (Matches(text, i, CommentOpen))
+            {
+                var close = text.IndexOf(CommentClose, i + CommentOpen.Length, StringComparison.Ordinal);
+                var stop = close < 0 ? text.Length : close + CommentClose.Length;
+
+                // Inside the comment there is nothing to complete; its text is switched off.
+                // An unterminated one runs to the end of the file, so the caret sitting at
+                // that end is inside it too — which is exactly where one is being typed.
+                if (offset > i && (close < 0 || offset < stop)) return CompletionContext.None;
+
+                if (close < 0) break;
+                i = stop;
+                continue;
+            }
+
             // A tag cannot contain '<'. While one is being typed it has no '>' of its own, so
             // the search for one lands on the next tag in the file; this stops short of it.
             if (text[i] == '<') break;
@@ -161,6 +182,16 @@ public static class CompletionContextScanner
         {
             var c = text[i];
             if (quote != '\0') { if (c == quote) quote = '\0'; continue; }
+
+            // A server-side comment between attributes may hold anything, '>' included
+            if (Matches(text, i, CommentOpen))
+            {
+                var close = text.IndexOf(CommentClose, i + CommentOpen.Length, StringComparison.Ordinal);
+                if (close < 0) return -1;
+                i = close + CommentClose.Length - 1;
+                continue;
+            }
+
             if (c is '"' or '\'') { quote = c; continue; }
             if (c == '>') return i + 1;
         }

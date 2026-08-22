@@ -68,4 +68,33 @@ class ServerCommentParsingTest : BasePlatformTestCase() {
         val comment = PsiTreeUtil.findChildOfType(file, XmlComment::class.java)!!
         assertEquals("<%-- note --%>", comment.text)
     }
+
+    fun testCommentBetweenAttributesDoesNotBreakTheTag() {
+        // What the user hit: `<!--` inside a tag reads as three attributes, so the tag never
+        // closed and everything after it — the closing tag included — became an error element
+        val file = myFixture.configureByText(
+            "Test.dothtml", "<th <%-- width=\"30%\" --%>>{{value: Name}}</th>")
+
+        val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java)
+        assertEmpty("Parser reports: " + errors.joinToString { it.errorDescription }, errors)
+
+        val tag = PsiTreeUtil.findChildOfType(file, XmlTag::class.java)!!
+        assertEquals("th", tag.name)
+        assertEmpty(tag.attributes)
+    }
+
+    fun testAttributesAroundACommentSurvive() {
+        val file = myFixture.configureByText(
+            "Test.dothtml", "<th class=\"a\" <%-- w=\"1\" --%> id=\"b\">x</th>")
+
+        val tag = PsiTreeUtil.findChildOfType(file, XmlTag::class.java)!!
+        assertEquals("a", tag.getAttribute("class")?.value)
+        assertEquals("b", tag.getAttribute("id")?.value)
+        assertNull("The commented-out attribute must not be read", tag.getAttribute("w"))
+    }
+
+    fun testTextIsNotModifiedByBlanking() {
+        val text = "<th <%-- width=\"30%\" --%>>x</th>"
+        assertEquals(text, myFixture.configureByText("Test.dothtml", text).text)
+    }
 }
