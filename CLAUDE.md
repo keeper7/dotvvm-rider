@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (75; the server has 68 of its own)
+./gradlew test                           # All tests (81; the server has 68 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -57,7 +57,11 @@ the reported code belongs to `echo`, not to the build.
 - `server/src/DotVVM.LanguageServer/` — LSP server: `Model/`, `Configuration/`, `Analysis/`, `Handlers/`
 - `server/src/DotVVM.LanguageServer.Probe/` — loads the project assembly in its own process
 - `fixtures/SampleApp/` — sample DotVVM app for manual and integration testing; it is a real
-  buildable app, because the probe needs a built assembly and go-to-definition needs a `.csproj`
+  buildable app, because the probe needs a built assembly and go-to-definition needs a `.csproj`.
+  `SiteMaster.dotmaster` and `Address.dotcontrol` are written for this fixture, and their
+  **structure** is what makes them worth having —
+  each caught a bug the hand-written fixtures did not — so keep the byte order marks, the
+  multi-line binding with quotes inside it, and the DotVVM properties on plain HTML elements
 
 Registering `HTMLParserDefinition` directly for the DotVVM language is not enough — it builds the
 PSI file with `HTMLLanguage` hardcoded, so `psiFile.language` never returns DotVVM. That is what
@@ -80,6 +84,14 @@ serialized config, not a dead language server.
 The plugin bundles the published server under `<plugin>/server/` and starts it with
 `dotnet <dll>`; `ServerBinaryLocator` finds it and stays free of IntelliJ API so plain JUnit
 can test it.
+
+**Do not start the runtime by the bare `dotnet` name.** An IDE launched from the Dock inherits
+`/usr/bin:/bin:/usr/sbin:/sbin`, which holds no .NET installation — the macOS installer puts it
+in `/usr/local/share/dotnet` and leaves no symlink. The sandbox never shows this, because Gradle
+starts it from a shell that has the full PATH, so the same build works from `runRider` and fails
+from the Dock, silently: the server never comes up and the status bar simply stays empty.
+`DotvvmLspClientDescriptor` therefore asks `PathEnvironmentVariableUtil` for the IDE's own PATH
+first, then walks `ServerBinaryLocator.dotnetSearchPath`, and only then falls back to the name.
 
 The platform renamed its LSP classes to match LSP terminology — **the IDE is the client**, the
 external process is the server. Use `LspIntegrationProvider` and `ProjectWideLspClientDescriptor`
