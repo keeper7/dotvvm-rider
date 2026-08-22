@@ -184,12 +184,54 @@ public sealed class AssemblyProbeSource : IConfigurationSource
                 TagName: Str(item, "TagName"),
                 Src: Str(item, "Src"))).ToList();
 
-            return new ControlRegistry(registrations, Array.Empty<ControlInfo>());
+            return new ControlRegistry(registrations, ParseControls(doc.RootElement));
         }
         catch (JsonException)
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Reads the control types. A probe that predates them omits the key altogether, and that
+    /// must not cost the registrations: an outdated bundled probe would take the whole tier down.
+    /// </summary>
+    private static List<ControlInfo> ParseControls(JsonElement root)
+    {
+        var result = new List<ControlInfo>();
+
+        if (!root.TryGetProperty("Controls", out var array) ||
+            array.ValueKind != JsonValueKind.Array)
+        {
+            return result;
+        }
+
+        foreach (var item in array.EnumerateArray())
+        {
+            var fullTypeName = Str(item, "FullTypeName");
+            if (fullTypeName is null) continue;
+
+            result.Add(new ControlInfo(
+                FullTypeName: fullTypeName,
+                BaseType: Str(item, "BaseType"),
+                DefaultContentProperty: Str(item, "DefaultContentProperty"),
+                Properties: Strings(item, "Properties")));
+        }
+
+        return result;
+    }
+
+    private static List<string> Strings(JsonElement element, string name)
+    {
+        if (!element.TryGetProperty(name, out var array) || array.ValueKind != JsonValueKind.Array)
+        {
+            return new List<string>();
+        }
+
+        return array.EnumerateArray()
+            .Where(v => v.ValueKind == JsonValueKind.String)
+            .Select(v => v.GetString()!)
+            .ToList();
     }
 
     private static string? Str(JsonElement element, string name) =>

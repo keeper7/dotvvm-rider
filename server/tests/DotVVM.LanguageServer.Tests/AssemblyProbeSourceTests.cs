@@ -42,6 +42,50 @@ public class AssemblyProbeSourceTests
     }
 
     [Fact]
+    public void ParsesControlsWithTheirProperties()
+    {
+        const string json = """
+            {
+              "Registrations": [
+                {"TagPrefix":"dot","Namespace":"DotVVM.Framework.Controls","Assembly":"DotVVM.Framework","TagName":null,"Src":null}
+              ],
+              "Controls": [
+                {"FullTypeName":"DotVVM.Framework.Controls.Repeater",
+                 "BaseType":"DotVVM.Framework.Controls.ItemsControl",
+                 "DefaultContentProperty":null,
+                 "Properties":["DataContext","DataSource","ItemTemplate","Visible"]}
+              ]
+            }
+            """;
+
+        var registry = AssemblyProbeSource.ParseProbeOutput(json);
+
+        var control = registry!.GetControl("dot", "Repeater");
+        Assert.NotNull(control);
+        Assert.Contains("Visible", control!.Properties);
+        Assert.Contains("ItemTemplate", control.Properties);
+    }
+
+    /// <summary>
+    /// Output from an older probe carries no Controls key at all. The registrations must still
+    /// load: a stale bundled probe would otherwise take tier 3 down entirely.
+    /// </summary>
+    [Fact]
+    public void ParsesOutputWithoutTheControlsKey()
+    {
+        const string json = """
+            {"Registrations":[
+              {"TagPrefix":"dot","Namespace":"DotVVM.Framework.Controls","Assembly":"DotVVM.Framework","TagName":null,"Src":null}
+            ]}
+            """;
+
+        var registry = AssemblyProbeSource.ParseProbeOutput(json);
+
+        Assert.NotNull(registry);
+        Assert.True(registry!.IsKnownPrefix("dot"));
+    }
+
+    [Fact]
     public void ReturnsNullForMalformedProbeOutput()
     {
         Assert.Null(AssemblyProbeSource.ParseProbeOutput("{ broken"));
@@ -81,6 +125,14 @@ public class AssemblyProbeSourceTests
         // cc:MyControl is registered only in DotvvmStartup.cs; it cannot be read from markup
         Assert.True(registry!.IsKnownTag("cc", "MyControl"));
         Assert.True(registry.IsKnownPrefix("dot"));
+
+        // The whole point of tier 3: the properties come from the real assemblies. Repeater
+        // lives in DotVVM.Framework, so this also proves the registered assemblies are scanned.
+        var repeater = registry.GetControl("dot", "Repeater");
+        Assert.NotNull(repeater);
+        Assert.Contains("ItemTemplate", repeater!.Properties);
+        // Inherited from the base classes; without the whole class-constructor chain it is absent
+        Assert.Contains("Visible", repeater.Properties);
     }
 
     /// <summary>
