@@ -65,13 +65,14 @@ public static class ControlCompletion
             : registry.GetControl(context.Prefix, context.TagName ?? "")?.Properties.ToArray()
               ?? Array.Empty<ControlProperty>();
 
-        return own.Concat(registry.AttachedProperties)
-            .Where(p => p.IsAttribute && !written.Contains(p.Name))
-            .Select(Describe)
+        return own.Select(p => (Property: p, Attached: false))
+            .Concat(registry.AttachedProperties.Select(p => (Property: p, Attached: true)))
+            .Where(p => p.Property.IsAttribute && !written.Contains(p.Property.Name))
+            .Select(p => Describe(p.Property, p.Attached))
             .ToList();
     }
 
-    private static CompletionSuggestion Describe(ControlProperty property)
+    private static CompletionSuggestion Describe(ControlProperty property, bool attached)
     {
         // A property that takes nothing but a binding is worth writing the braces for; anything
         // else gets an empty value with the caret between the quotes.
@@ -85,8 +86,10 @@ public static class ControlCompletion
             InsertText: insertText,
             IsSnippet: true,
             Detail: property.TypeName is null ? null : ShortTypeName(property.TypeName),
-            // Required first, then alphabetical: the '0' and '1' never reach the user
-            SortText: (property.Required ? "0" : "1") + property.Name);
+            // Required first, then the control's own, then the attached ones - which apply to
+            // every element and would otherwise sit in the middle of the control's own list.
+            // The digit never reaches the user.
+            SortText: (property.Required ? "0" : attached ? "2" : "1") + property.Name);
     }
 
     private static string ShortTypeName(string fullName)
