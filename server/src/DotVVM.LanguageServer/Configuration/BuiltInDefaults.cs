@@ -3,8 +3,8 @@ using DotVVM.LanguageServer.Model;
 namespace DotVVM.LanguageServer.Configuration;
 
 /// <summary>
-/// Stupeň 1: minimální znalost standardních kontrolek DotVVM.
-/// Funguje okamžitě po otevření projektu, ještě před jeho sestavením.
+/// Tier 1: a minimal knowledge of the standard DotVVM controls. Works the moment a project is
+/// opened, before it has been built.
 /// </summary>
 public sealed class BuiltInDefaults : IConfigurationSource
 {

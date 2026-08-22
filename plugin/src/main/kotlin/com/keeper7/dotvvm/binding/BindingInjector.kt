@@ -21,7 +21,7 @@ class BindingInjector : MultiHostInjector {
         if (context !is PsiLanguageInjectionHost) return
         if (!context.isValidHost) return
 
-        // Rozsah textu uvnitř hostitele (u atributu bez uvozovek)
+        // Text range inside the host (for an attribute, without the quotes)
         val inner = when (context) {
             is XmlAttributeValue ->
                 TextRange(context.valueTextRange.startOffset - context.textRange.startOffset,
@@ -34,7 +34,7 @@ class BindingInjector : MultiHostInjector {
         val matches = BindingScanner.scan(text)
         if (matches.isEmpty()) return
 
-        // Jeden injektovaný soubor na hostitele, více míst uvnitř
+        // One injected file per host, with several places inside it
         registrar.startInjecting(BindingLanguage.INSTANCE)
         for (m in matches) {
             registrar.addPlace(

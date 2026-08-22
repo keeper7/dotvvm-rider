@@ -19,11 +19,11 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        // EXPERIMENT: IU místo Rideru (stejná verze platformy 262, ale bez .NET backendu)
+        // EXPERIMENT: IU instead of Rider (same platform build 262, only without the .NET backend)
         intellijIdeaUltimate(property("platformVersion") as String) {
             useInstaller.set(false)
         }
-        // Rider nepublikuje test-framework jako artefakt — nutno vzít bundled
+        // Rider does not publish its test framework as an artifact, so the bundled one is used
         // testFramework.jar z distribuce (viz dokumentace Dependencies Extension)
         testFramework(TestFrameworkType.Platform)
     }
@@ -39,7 +39,7 @@ intellijPlatform {
     }
 }
 
-// Ruční ověření v cílovém IDE: ./gradlew runRider
+// Manual verification in the target IDE: ./gradlew runRider
 intellijPlatformTesting {
     runIde {
         register("runRider") {
@@ -62,7 +62,7 @@ java {
 
 tasks.test { useJUnit() }
 
-// --- Přibalení LSP serveru do distribuce ---------------------------------------------
+// --- Bundling the LSP server into the distribution -----------------------------------
 
 val serverProjectDir = rootDir.resolve("../server/src/DotVVM.LanguageServer")
 val probeProjectDir = rootDir.resolve("../server/src/DotVVM.LanguageServer.Probe")
@@ -70,15 +70,15 @@ val serverOutputDir = layout.buildDirectory.dir("languageServer")
 val probeOutputDir = layout.buildDirectory.dir("languageServerProbe")
 
 /**
- * Obě varianty probe musí do distribuce. Net8 host odmítne assembly cílenou na net9,
- * takže server vybírá variantu podle `tfm` v runtimeconfig.json cílového projektu
- * (AssemblyProbeSource.ResolveProbeFor). Zabalit jen jednu znamená tiše ztratit
- * stupeň 3 u novějších projektů.
+ * Both probe variants have to ship. A net8 host rejects an assembly targeting net9, so the
+ * server picks the variant by `tfm` in the target project's runtimeconfig.json
+ * (AssemblyProbeSource.ResolveProbeFor). Shipping only one silently loses tier 3 on newer
+ * projects.
  */
 val probeFrameworks = listOf("net8.0", "net9.0")
 
 val publishLanguageServer by tasks.registering(Exec::class) {
-    description = "Publikuje LSP server do adresáře, který se přibalí do pluginu"
+    description = "Publishes the LSP server into the directory bundled with the plugin"
     group = "build"
 
     inputs.dir(serverProjectDir)
@@ -94,12 +94,12 @@ val publishLanguageServer by tasks.registering(Exec::class) {
 }
 
 /**
- * Probe má víc cílových frameworků, a `dotnet publish --output` takový projekt
- * odmítne (NETSDK1129). Každá varianta se proto publikuje samostatným taskem
- * do probe/<tfm>/, přesně tam, kde ji server hledá.
+ * The probe has several target frameworks, and `dotnet publish --output` refuses such a
+ * project (NETSDK1129). Each variant is therefore published by its own task into
+ * probe/<tfm>/, exactly where the server looks for it.
  */
 val publishProbe by tasks.registering {
-    description = "Publikuje probe proces pro všechny cílové frameworky"
+    description = "Publishes the probe process for every target framework"
     group = "build"
 }
 
@@ -123,8 +123,8 @@ probeFrameworks.forEach { tfm ->
     publishProbe { dependsOn(task) }
 }
 
-// Platí pro všechny sandboxy (buildPlugin, runIde, runRider), ne jen pro ten výchozí —
-// jinak by server chyběl právě při ručním ověření v Rideru.
+// Applies to every sandbox (buildPlugin, runIde, runRider), not just the default one;
+// otherwise the server would be missing exactly during manual verification in Rider.
 tasks.withType<PrepareSandboxTask>().configureEach {
     dependsOn(publishLanguageServer, publishProbe)
     from(serverOutputDir) { into("${rootProject.name}/server") }

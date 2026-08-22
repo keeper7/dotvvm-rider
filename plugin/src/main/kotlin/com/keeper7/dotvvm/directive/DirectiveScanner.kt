@@ -4,24 +4,24 @@ package com.keeper7.dotvvm.directive
 data class Directive(val name: String, val value: String, val start: Int, val end: Int)
 
 /**
- * Najde direktivy na začátku souboru.
+ * Finds the directives at the start of the file.
  *
- * Bez závislosti na IntelliJ API, aby šel otestovat obyčejným JUnit testem — stejné
- * dělení odpovědnosti jako u [com.keeper7.dotvvm.binding.BindingScanner]: skener říká
- * *kde* direktivy jsou, lexer *jak* je předat platformě.
+ * Free of IntelliJ API so it can be tested with a plain JUnit test — the same split of
+ * responsibility as in [com.keeper7.dotvvm.binding.BindingScanner]: the scanner says *where*
+ * the directives are, the lexer *how* to hand them to the platform.
  */
 object DirectiveScanner {
 
     /**
-     * Direktivy, které DotVVM zná. Neznámé jméno se za direktivu nepovažuje — jinak by
-     * skener spolkl libovolný text začínající zavináčem a schoval ho před HTML parserem.
+     * The directives DotVVM knows. An unknown name is not treated as a directive; otherwise
+     * the scanner would swallow any text starting with an at sign and hide it from the parser.
      */
     val KNOWN_NAMES = listOf(
         "viewModel", "masterPage", "import", "service", "js",
         "baseType", "property", "noWrapperTag", "viewModule"
     )
 
-    /** Značka pořadí bajtů na začátku souborů uložených Visual Studiem. */
+    /** Byte order mark at the start of files saved by Visual Studio. */
     private const val BOM = '\uFEFF'
 
     fun scan(text: String): List<Directive> {
@@ -37,14 +37,14 @@ object DirectiveScanner {
 
             when {
                 content.isEmpty() -> {
-                    // Prázdné řádky mezi direktivami blok neukončují
+                    // Blank lines between directives do not end the block
                 }
-                content.startsWith('<') -> return result   // začalo tělo dokumentu
+                content.startsWith('<') -> return result   // the document body has started
                 content.startsWith('@') -> {
                     val directive = parseLine(content, offset + indent) ?: return result
                     result.add(directive)
                 }
-                else -> return result                      // cokoli jiného blok ukončuje
+                else -> return result                      // anything else ends the block
             }
 
             offset = lineEnd + 1

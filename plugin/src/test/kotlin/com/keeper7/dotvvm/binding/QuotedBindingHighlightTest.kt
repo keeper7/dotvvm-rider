@@ -14,13 +14,13 @@ class QuotedBindingHighlightTest : BasePlatformTestCase() {
     }
 
     fun testClosingQuoteIsPartOfTheAttributeValue() {
-        // Uvozovka ukončující hodnotu se musí barvit jako hodnota, ne jako text v tagu
+        // The quote ending the value must be coloured as a value, not as text inside the tag
         val offset = sample.indexOf("}\"") + 1
         assertContainsElements(keysAt(sample, offset), "HTML_ATTRIBUTE_VALUE")
     }
 
     fun testFollowingAttributeNameIsHighlighted() {
-        // Atribut za bindingem s uvozovkami nesmí spadnout do textu
+        // The attribute after a binding with quotes must not fall into text
         val offset = sample.indexOf("C=")
         assertContainsElements(keysAt(sample, offset), "HTML_ATTRIBUTE_NAME")
     }

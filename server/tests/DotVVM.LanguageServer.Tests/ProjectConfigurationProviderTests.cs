@@ -59,7 +59,7 @@ public class ProjectConfigurationProviderTests
         });
 
         var result = await provider.GetAsync("/x", default);
-        // vyšší stupeň nesmí zahodit znalosti nižšího
+        // a higher tier must not discard what a lower one knows
         Assert.True(result.Registry.IsKnownPrefix("dot"));
         Assert.True(result.Registry.IsKnownPrefix("cc"));
     }

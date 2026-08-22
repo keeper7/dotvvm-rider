@@ -20,7 +20,7 @@ class DotvvmLspIntegrationProvider : LspIntegrationProvider {
 
         val serverDll = locateServer()
         if (serverDll == null) {
-            LOG.warn("LSP server nebyl v distribuci pluginu nalezen — pokročilé funkce budou nedostupné")
+            LOG.warn("The LSP server was not found in the plugin distribution; advanced features stay off")
             return
         }
 

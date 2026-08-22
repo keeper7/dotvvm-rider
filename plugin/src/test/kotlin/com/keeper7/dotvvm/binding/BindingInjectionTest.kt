@@ -22,19 +22,19 @@ class BindingInjectionTest : BasePlatformTestCase() {
 
     fun testInjectsIntoAttributeValue() {
         val langs = injectedLanguagesIn("""<dot:TextBox Text="{value: Name}"/>""")
-        assertTrue("očekávána injektáž DotVVMBinding, nalezeno: $langs",
+        assertTrue("expected a DotVVMBinding injection, found: $langs",
                    langs.contains("DotVVMBinding"))
     }
 
     fun testDoesNotInjectIntoPlainAttribute() {
         val langs = injectedLanguagesIn("""<div class="plain-value"/>""")
-        assertFalse("do běžného atributu se nemá injektovat: $langs",
+        assertFalse("an ordinary attribute must not be injected into: $langs",
                     langs.contains("DotVVMBinding"))
     }
 
     fun testInjectsIntoTextContent() {
         val langs = injectedLanguagesIn("""<span>{{value: Name}}</span>""")
-        assertTrue("očekávána injektáž do textu, nalezeno: $langs",
+        assertTrue("expected an injection into text, found: $langs",
                    langs.contains("DotVVMBinding"))
     }
 
@@ -45,7 +45,7 @@ class BindingInjectionTest : BasePlatformTestCase() {
         assertNotNull(attr)
         val manager = InjectedLanguageManager.getInstance(project)
         val injected = manager.getInjectedPsiFiles(attr!!)
-        assertNotNull("očekávána injektáž", injected)
-        assertEquals("očekáváno právě jedno injektované místo", 1, injected!!.size)
+        assertNotNull("expected an injection", injected)
+        assertEquals("expected exactly one injected place", 1, injected!!.size)
     }
 }

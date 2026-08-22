@@ -28,7 +28,7 @@ class DirectiveScannerTest {
     }
 
     @Test fun stopsAtFirstTag() {
-        // Po prvním tagu už direktivy nejsou — @something uvnitř těla je obyčejný text
+        // After the first tag there are no directives: @something in the body is plain text
         val text = "@viewModel App.Vm\n<html>\n@viewModel App.Other\n</html>"
         val found = DirectiveScanner.scan(text)
         assertEquals(1, found.size)
@@ -40,7 +40,7 @@ class DirectiveScannerTest {
     }
 
     @Test fun ignoresUnknownDirectiveName() {
-        // Neznámé jméno není direktiva; skener nesmí pohltit cizí text
+        // An unknown name is not a directive; the scanner must not swallow foreign text
         val text = "@nonsense whatever\n<html></html>"
         assertTrue(DirectiveScanner.scan(text).isEmpty())
     }
@@ -64,9 +64,9 @@ class DirectiveScannerTest {
     }
 
     @Test fun keepsCommaInsideGenericArguments() {
-        // Skener hodnotu nerozděluje na typ a assembly — to dělá až server
-        // (FindAssemblySeparator ve ViewModelDirective.cs). Tady jde jen o to, že
-        // čárky ani lomené závorky direktivu předčasně neukončí.
+        // The scanner does not split the value into type and assembly; the server does that
+        // (FindAssemblySeparator in ViewModelDirective.cs). All that matters here is that
+        // neither commas nor angle brackets end the directive early.
         val text = "@viewModel App.Vm<A, B>, App\n<html></html>"
         val found = DirectiveScanner.scan(text)
         assertEquals("App.Vm<A, B>, App", found[0].value)
@@ -80,8 +80,8 @@ class DirectiveScannerTest {
     }
 
     @Test fun findsDirectivesInFileStartingWithBom() {
-        // Soubory uložené Visual Studiem začínají BOM; bez jeho přeskočení
-        // by skener neviděl ani první direktivu
+        // Files saved by Visual Studio start with a BOM; without skipping it the scanner
+        // would not even see the first directive
         val text = "\uFEFF@viewModel System.Object\n@noWrapperTag\n<div></div>"
         val found = DirectiveScanner.scan(text)
         assertEquals(listOf("viewModel", "noWrapperTag"), found.map { it.name })

@@ -9,7 +9,7 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.openapi.wm.impl.status.EditorBasedStatusBarPopup
 
-/** Stupeň konfigurace hlášený serverem; drží se na projektu, protože server je také projektový. */
+/** The configuration source reported by the server; held on the project, as the server is per-project. */
 val CONFIGURATION_TIER = Key.create<String>("dotvvm.configuration.tier")
 
 const val CONFIGURATION_TIER_WIDGET_ID = "DotvvmConfigurationTier"
@@ -35,7 +35,7 @@ class DotvvmStatusBarWidget(project: Project)
     override fun createInstance(project: Project): StatusBarWidget =
         DotvvmStatusBarWidget(project)
 
-    // Widget jen informuje; klikat není na co.
+    // The widget only informs; there is nothing to click.
     override fun createPopup(context: DataContext): ListPopup? = null
 }
 

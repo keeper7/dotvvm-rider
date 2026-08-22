@@ -53,7 +53,7 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
 
     public override async Task<Unit> Handle(DidChangeTextDocumentParams request, CancellationToken ct)
     {
-        // Registrujeme Full sync, takže poslední change nese celý obsah
+        // We register Full sync, so the last change carries the whole content
         var text = request.ContentChanges.LastOrDefault()?.Text ?? string.Empty;
         _documents.Set(request.TextDocument.Uri.ToString(), text);
         await PublishDiagnosticsAsync(request.TextDocument.Uri, text, ct);
@@ -76,8 +76,8 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
         var issues = TagValidator.Validate(
             text, configuration.Registry, configuration.KnowsProjectPrefixes);
 
-        // Klient podle stupně kreslí status bar. Bez toho by uživatel neměl jak zjistit,
-        // proč server nezná jeho vlastní kontrolky — prázdný registr se navenek neprojeví.
+        // The client paints the status bar from this. Without it the user would have no way to
+        // tell why the server does not know their own controls: an empty registry is invisible.
         _server.SendNotification("dotvvm/configurationTier", new { tier = configuration.SourceName });
 
         _server.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams

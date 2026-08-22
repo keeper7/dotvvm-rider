@@ -6,15 +6,15 @@ import com.intellij.platform.lsp.api.Lsp4jClient
 import com.intellij.platform.lsp.api.LspServerNotificationsHandler
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 
-/** Tvar `dotvvm/configurationTier`; lsp4j do něj deserializuje parametry notifikace. */
+/** Shape of `dotvvm/configurationTier`; lsp4j deserialises the notification parameters into it. */
 class ConfigurationTierParams {
     @JvmField var tier: String? = null
 }
 
 /**
- * Rozšiřuje standardního klienta o jedinou vlastní notifikaci serveru. Bez ní by
- * status bar neměl odkud stupeň konfigurace vzít — LSP protokol pro tuto informaci
- * nic standardního nemá.
+ * Extends the standard client with the server's single custom notification. Without it the
+ * status bar would have nowhere to read the configuration source from — the LSP protocol has
+ * nothing standard for this.
  */
 class DotvvmLsp4jClient(
     handler: LspServerNotificationsHandler,
@@ -28,9 +28,9 @@ class DotvvmLsp4jClient(
 
         project.putUserData(CONFIGURATION_TIER, tier)
 
-        // Widget musí stav přepočítat sám. `StatusBarWidgetsManager.updateWidget()` na to
-        // nestačí — ten řeší jen dostupnost widgetu, takže už vykreslený widget by dál
-        // ukazoval hodnotu z doby, kdy server ještě mlčel.
+        // The widget has to recompute its state itself. `StatusBarWidgetsManager.updateWidget()`
+        // is not enough: it only re-evaluates whether the widget is available, so an already
+        // painted widget would keep showing the value from before the server answered.
         val statusBar = WindowManager.getInstance().getStatusBar(project) ?: return
         (statusBar.getWidget(CONFIGURATION_TIER_WIDGET_ID) as? DotvvmStatusBarWidget)?.update()
     }

@@ -4,9 +4,9 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * Najde LSP server přibalený v distribuci pluginu a sestaví příkaz pro jeho spuštění.
+ * Finds the LSP server bundled in the plugin distribution and builds the command to start it.
  *
- * Bez závislosti na IntelliJ API, aby šel otestovat obyčejným JUnit testem.
+ * Free of IntelliJ API so it can be tested with a plain JUnit test.
  */
 object ServerBinaryLocator {
 
@@ -19,8 +19,8 @@ object ServerBinaryLocator {
     }
 
     /**
-     * Server je publikovaný jako framework-dependent, takže se spouští přes `dotnet`.
-     * Rider vlastní .NET runtime obsahuje.
+     * The server is published framework-dependent, so it is started through `dotnet`.
+     * Rider ships a .NET runtime of its own.
      */
     fun buildCommandLine(dll: Path): List<String> = listOf("dotnet", dll.toString())
 }

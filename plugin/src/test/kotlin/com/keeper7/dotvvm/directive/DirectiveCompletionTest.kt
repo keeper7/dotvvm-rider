@@ -13,7 +13,7 @@ class DirectiveCompletionTest : BasePlatformTestCase() {
     }
 
     fun testDoesNotCompleteInsideBody() {
-        // Uvnitř těla dokumentu direktivy nejsou, nabízet je by bylo matoucí
+        // There are no directives inside the document body; offering them would mislead
         myFixture.configureByText("Sample.dothtml", "<html><body>@<caret></body></html>")
         myFixture.completeBasic()
 

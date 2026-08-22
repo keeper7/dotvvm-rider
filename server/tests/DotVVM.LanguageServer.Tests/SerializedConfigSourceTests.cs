@@ -109,8 +109,8 @@ public class SerializedConfigSourceTests : IDisposable
         Assert.True(registry!.IsKnownPrefix("dot"));
         Assert.True(registry.GetTagsForPrefix("dot").Count > 50);
 
-        // Vlastnosti se v reálném souboru nesou vnořeně pod typem, ne v plochém klíči.
-        // Bez tohoto tvrzení projde i parser, který o nich neví, a hover zůstane prázdný.
+        // In a real file the properties are nested under the type, not held in a flat key.
+        // Without this assertion a parser unaware of them would pass and hover would stay empty.
         var button = registry.GetControl("dot", "Button");
         Assert.NotNull(button);
         Assert.Contains("ButtonTagName", button!.Properties);

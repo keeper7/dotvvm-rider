@@ -31,8 +31,8 @@ class BindingFileType private constructor() : LanguageFileType(BindingLanguage.I
 }
 
 /**
- * Parser zůstává plochý — strom výrazů není pro MVP potřeba, sémantiku řeší
- * LSP server. Injektáž ale vyžaduje, aby měl jazyk registrovanou ParserDefinition.
+ * The parser stays flat: an expression tree is not needed for the MVP, since the LSP server
+ * handles the semantics. Injection does require the language to have a ParserDefinition.
  */
 class BindingParserDefinition : ParserDefinition {
 

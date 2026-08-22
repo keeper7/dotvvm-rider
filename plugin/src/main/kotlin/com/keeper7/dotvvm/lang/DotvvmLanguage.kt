@@ -3,11 +3,11 @@ package com.keeper7.dotvvm.lang
 import com.intellij.lang.html.HTMLLanguage
 
 /**
- * DotVVM je nadmnožina HTML — děděním z [HTMLLanguage] získá plugin veškerou HTML,
+ * DotVVM is a superset of HTML: by extending [HTMLLanguage] the plugin gets all of the
  * CSS a JS podporu platformy zdarma.
  *
- * [HTMLLanguage.INSTANCE] se předává přímo, nikoli přes vlastní `val` v companion
- * objektu, aby se předešlo záludnosti s pořadím inicializace.
+ * [HTMLLanguage.INSTANCE] is passed directly rather than through a `val` of our own in the
+ * companion object, to avoid an initialisation order trap.
  */
 class DotvvmLanguage private constructor() : HTMLLanguage(HTMLLanguage.INSTANCE, "DotVVM") {
     companion object {

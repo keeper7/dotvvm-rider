@@ -8,22 +8,22 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 class QuotedBindingTest : BasePlatformTestCase() {
 
     fun testQuoteInsideBindingDoesNotEndAttribute() {
-        // DotVVM tento zápis podporuje; HTML by uvozovku brala jako konec hodnoty
+        // DotVVM supports this form; HTML would read the quote as the end of the value
         val file = myFixture.configureByText(
             "A.dotcontrol",
             "<cc:X ValueChanged=\"{staticCommand: _c.A = _c.B ?? \"\"}\" Enabled=\"{value: _c.E}\" />"
         )
 
         val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java)
-        assertEmpty("Parser hlásí: " + errors.joinToString { it.errorDescription }, errors)
+        assertEmpty("Parser reports: " + errors.joinToString { it.errorDescription }, errors)
 
         val tag = PsiTreeUtil.findChildOfType(file, XmlTag::class.java)!!
         assertEquals("cc:X", tag.name)
-        assertNotNull("Druhý atribut se ztratil", tag.getAttribute("Enabled"))
+        assertNotNull("The second attribute was lost", tag.getAttribute("Enabled"))
     }
 
     fun testFileTextIsNotModified() {
-        // Maskování je jen pro lexer; v dokumentu musí zůstat původní uvozovky
+        // Masking is for the lexer only; the document must keep the original quotes
         val text = "<cc:X A=\"{staticCommand: B ?? \"\"}\" />"
         val file = myFixture.configureByText("B.dotcontrol", text)
         assertEquals(text, file.text)

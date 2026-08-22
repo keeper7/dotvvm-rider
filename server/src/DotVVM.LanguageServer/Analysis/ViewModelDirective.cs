@@ -1,12 +1,12 @@
 namespace DotVVM.LanguageServer.Analysis;
 
-/// <summary>Odkaz na ViewModel z direktivy @viewModel, se souřadnicemi názvu typu.</summary>
+/// <summary>A view model reference from the @viewModel directive, with the type name's position.</summary>
 public record ViewModelReference(
     string TypeName, string? AssemblyName, int Line, int Character, int Length);
 
 /// <summary>
-/// Rozbor direktivy @viewModel. Toto je jediný závazný zdroj informace o tom,
-/// ke kterému ViewModelu view patří — konvence názvů souborů je pouhá zvyklost.
+/// Parses the @viewModel directive. This is the only binding source of truth about which view
+/// model a view belongs to; the file naming convention is mere habit.
 /// </summary>
 public static class ViewModelDirective
 {
@@ -24,7 +24,7 @@ public static class ViewModelDirective
 
             if (!lineText.StartsWith(DirectiveName, StringComparison.OrdinalIgnoreCase))
             {
-                // Direktivy jsou na začátku souboru; po prvním tagu už nemá smysl hledat
+                // Directives sit at the start of the file; after the first tag there is no point looking
                 if (lineText.StartsWith('<')) return null;
                 continue;
             }
@@ -50,8 +50,8 @@ public static class ViewModelDirective
     }
 
     /// <summary>
-    /// Najde čárku oddělující název assembly. Čárky uvnitř generických argumentů
-    /// (například List&lt;A, B&gt;) se přeskočí.
+    /// Finds the comma separating the assembly name. Commas inside generic arguments
+    /// (List&lt;A, B&gt;, for example) are skipped.
     /// </summary>
     private static int FindAssemblySeparator(string value)
     {

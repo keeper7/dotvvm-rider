@@ -1,21 +1,22 @@
 package com.keeper7.dotvvm.binding
 
 /**
- * Skryje před HTML lexerem uvozovky, které jsou uvnitř binding výrazu.
+ * Hides from the HTML lexer the quotes that sit inside a binding expression.
  *
- * DotVVM zápis `Changed="{staticCommand: X = Y ?? ""}"` je platný, ale HTML uvozovku uvnitř
- * hodnoty nepřipouští — lexer by hodnotu ukončil u `??` a zbytek výrazu i další atributy by
- * vypadly z tagu. Řídit stav HTML lexeru zvenčí nelze, zato mu lze podstrčit text, ve kterém
- * problém není: uvozovky uvnitř `{…}` se nahradí mezerou.
+ * The DotVVM form `Changed="{staticCommand: X = Y ?? ""}"` is valid, but HTML does not allow
+ * a quote inside a value — the lexer would end the value at `??`, and the rest of the
+ * expression along with the following attributes would fall out of the tag. The HTML lexer's
+ * state cannot be steered from outside, but it can be handed text without the problem:
+ * quotes inside `{…}` are replaced with a space.
  *
- * Náhrada je **znak za znak**, takže délka i všechny offsety zůstávají shodné s originálem
- * a tokeny ukazují na správná místa v souboru.
+ * The replacement is **character for character**, so the length and every offset stay equal
+ * to the original and the tokens still point at the right places in the file.
  *
- * Bez závislosti na IntelliJ API, aby šel otestovat obyčejným JUnit testem.
+ * Free of IntelliJ API so it can be tested with a plain JUnit test.
  */
 object AttributeQuoteMasker {
 
-    /** Vrátí původní text, pokud maskovat není co — ať se nekopíruje zbytečně. */
+    /** Returns the original text when there is nothing to mask, to avoid a needless copy. */
     fun mask(text: CharSequence): CharSequence {
         var result: StringBuilder? = null
         var i = 0
@@ -27,7 +28,7 @@ object AttributeQuoteMasker {
             if (quote >= text.length || text[quote] != '"') { i++; continue }
             if (quote + 1 >= text.length || text[quote + 1] != '{') { i = quote + 1; continue }
 
-            // Uvnitř hodnoty: uvozovky ve vnořeném bindingu se maskují
+            // Inside the value: quotes within the nested binding get masked
             var depth = 0
             var j = quote + 1
             while (j < text.length) {

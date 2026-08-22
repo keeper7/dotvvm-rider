@@ -7,16 +7,16 @@ import com.keeper7.dotvvm.lang.DotHtmlFileType
 import com.keeper7.dotvvm.lang.DotMasterFileType
 
 /**
- * Skryje chybu, kterou HTML parser hlásí kvůli direktivám v hlavičce souboru.
+ * Hides the error the HTML parser reports because of the directives in the file header.
  *
- * HTML nepřipouští `<!DOCTYPE>` po textu, a direktivy jsou pro parser text — proto na
- * DOCTYPE ukáže `Unexpected tokens`, ačkoli soubor je správně. Naučit parser direktivy
- * se ukázalo jako horší lék než nemoc: vsunutím vlastního uzlu před `XML_PROLOG` ztratí
- * platforma HTML schéma a začne hlásit jako neznámé i `<html>` a `<div>`. Filtrovat
- * hlášku je proto jediný zásah, který nechá strom dokumentu na pokoji.
+ * HTML does not allow `<!DOCTYPE>` after text, and to the parser directives are text — hence
+ * `Unexpected tokens` on the DOCTYPE even though the file is correct. Teaching the parser about
+ * directives proved worse than the disease: inserting a node of our own before `XML_PROLOG`
+ * costs the platform its HTML schema, and it starts reporting even `<html>` and `<div>` as
+ * unknown. Filtering the message is therefore the only fix that leaves the document tree alone.
  *
- * Filtr je záměrně úzký: mlčí jen o chybách v hlavičce souboru, které stojí a padají
- * s přítomností direktiv. Chyby v těle dokumentu prochází beze změny.
+ * The filter is deliberately narrow: it stays silent only about header errors that exist
+ * because of the directives. Errors in the document body pass through unchanged.
  */
 class DirectiveErrorFilter : HighlightErrorFilter() {
 
@@ -33,10 +33,10 @@ class DirectiveErrorFilter : HighlightErrorFilter() {
 
         val start = element.textRange.startOffset
 
-        // Chyba uvnitř samotného direktivového bloku
+        // An error inside the directive block itself
         if (start < directives.last().end) return false
 
-        // Chyba na DOCTYPE, který za direktivami následuje — jediné, co parseru vadí
+        // An error on the DOCTYPE that follows the directives: the only thing the parser minds
         val doctype = text.indexOf("<!DOCTYPE", directives.last().end, ignoreCase = true)
         return !(doctype >= 0 && element.textRange.containsOffset(doctype))
     }

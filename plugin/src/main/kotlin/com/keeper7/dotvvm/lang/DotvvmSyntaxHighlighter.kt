@@ -9,11 +9,12 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.keeper7.dotvvm.binding.QuotedBindingLexer
 
 /**
- * HTML zvýrazňovač, který maskuje uvozovky uvnitř bindingů stejně jako parser.
+ * An HTML highlighter that masks quotes inside bindings the same way the parser does.
  *
- * Editor nebarví podle PSI, ale vlastním lexerem ze `SyntaxHighlighter`. Kdyby maskování
- * bylo jen v `DotvvmParserDefinition`, strom by byl správný, ale barvy ne — hodnota
- * atributu by v editoru končila u první uvozovky uvnitř výrazu a zbytek tagu by zšedl.
+ * The editor does not paint from the PSI but from a lexer of its own obtained from
+ * `SyntaxHighlighter`. With the masking only in `DotvvmParserDefinition` the tree would be
+ * right and the colours wrong: in the editor the attribute value would end at the first quote
+ * inside the expression and the rest of the tag would go grey.
  */
 class DotvvmSyntaxHighlighter : HtmlFileHighlighter() {
 

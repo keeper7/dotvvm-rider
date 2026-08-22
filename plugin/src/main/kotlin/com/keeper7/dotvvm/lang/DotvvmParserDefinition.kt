@@ -8,10 +8,10 @@ import com.intellij.psi.tree.IFileElementType
 import com.keeper7.dotvvm.binding.QuotedBindingLexer
 
 /**
- * Registrovat pro DotVVM přímo [HTMLParserDefinition] nestačí — ta vytváří PSI soubor
- * natvrdo s `HTMLLanguage`, takže `psiFile.language` by nikdy nevrátil [DotvvmLanguage].
- * Přepsáním [getFileNodeType] a [createFile] zůstane veškeré HTML parsování zachováno,
- * ale soubor se hlásí jako DotVVM.
+ * Registering [HTMLParserDefinition] directly for DotVVM is not enough: it builds the PSI file
+ * with `HTMLLanguage` hardcoded, so `psiFile.language` would never return [DotvvmLanguage].
+ * Overriding [getFileNodeType] and [createFile] keeps all HTML parsing intact while the file
+ * reports itself as DotVVM.
  */
 class DotvvmParserDefinition : HTMLParserDefinition() {
 
@@ -21,7 +21,7 @@ class DotvvmParserDefinition : HTMLParserDefinition() {
         HtmlFileImpl(viewProvider, FILE)
 
     /**
-     * Binding výraz smí obsahovat uvozovky; HTML lexer by na nich hodnotu atributu ukončil.
+     * A binding expression may contain quotes; the HTML lexer would end the attribute value there.
      */
     override fun createLexer(project: com.intellij.openapi.project.Project?): com.intellij.lexer.Lexer =
         QuotedBindingLexer(super.createLexer(project))

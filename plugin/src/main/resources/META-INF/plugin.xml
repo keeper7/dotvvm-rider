@@ -20,7 +20,7 @@
   ]]></change-notes>
 
   <depends>com.intellij.modules.xml</depends>
-  <!-- LSP API není v Community edici; bez tohoto modulu se plugin nenačte -->
+  <!-- The LSP API is not in the Community edition; without this module the plugin will not load -->
   <depends>com.intellij.modules.lsp</depends>
 
   <extensions defaultExtensionNs="com.intellij">

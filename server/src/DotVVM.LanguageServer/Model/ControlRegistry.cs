@@ -1,8 +1,8 @@
 namespace DotVVM.LanguageServer.Model;
 
 /// <summary>
-/// Dotazy nad registrovanými kontrolkami. Bez závislosti na LSP i na DotVVM —
-/// jen data a jejich vyhledávání.
+/// Queries over the registered controls. Free of both LSP and DotVVM dependencies: data and
+/// lookups, nothing more.
 /// </summary>
 public sealed class ControlRegistry
 {
@@ -64,7 +64,7 @@ public sealed class ControlRegistry
             .Where(r => r.TagPrefix == prefix && r.Namespace is not null)
             .Select(r => r.Namespace!);
 
-    /// <summary>Sloučí dva registry; hodnoty z <paramref name="other"/> mají přednost.</summary>
+    /// <summary>Merges two registries; values from <paramref name="other"/> win.</summary>
     public ControlRegistry MergedWith(ControlRegistry other) =>
         new(_registrations.Concat(other._registrations).Distinct(),
             other._controls.Concat(_controls)

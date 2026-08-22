@@ -2,26 +2,26 @@ using DotVVM.LanguageServer.Model;
 
 namespace DotVVM.LanguageServer.Configuration;
 
-/// <summary>Výsledek načtení konfigurace včetně názvu použitého stupně.</summary>
+/// <summary>The loaded configuration together with the name of the source used.</summary>
 public record ConfigurationResult(
     ControlRegistry Registry, string SourceName, bool KnowsProjectPrefixes);
 
 /// <summary>
-/// Skládá zdroje od nejméně po nejvíce přesný. Vyšší stupeň nenahrazuje nižší,
-/// ale doplňuje ho — díky tomu zůstanou známé i standardní kontrolky v případě,
-/// že vyšší stupeň zná jen část projektu.
+/// Composes the sources from the least to the most accurate. A higher tier does not replace a
+/// lower one but adds to it, so the standard controls stay known even when the higher tier covers
+/// only part of the project.
 /// </summary>
 public sealed class ProjectConfigurationProvider
 {
     private readonly IReadOnlyList<IConfigurationSource> _sources;
 
-    /// <param name="sources">Zdroje seřazené od nejnižšího stupně k nejvyššímu.</param>
+    /// <param name="sources">Sources ordered from the lowest tier to the highest.</param>
     public ProjectConfigurationProvider(IEnumerable<IConfigurationSource> sources)
     {
         _sources = sources.ToList();
     }
 
-    /// <summary>Výchozí složení: vestavěné hodnoty → serialized config → assembly projektu.</summary>
+    /// <summary>Default composition: built-in values, serialized config, project assembly.</summary>
     public static ProjectConfigurationProvider CreateDefault() =>
         new(new IConfigurationSource[]
         {
@@ -45,7 +45,7 @@ public sealed class ProjectConfigurationProvider
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // Selhání jednoho zdroje nesmí shodit celý provider
+                // One source failing must not bring down the whole provider
                 await Console.Error.WriteLineAsync(
                     $"[dotvvm-ls] source '{source.Name}' failed: {ex.Message}");
                 continue;

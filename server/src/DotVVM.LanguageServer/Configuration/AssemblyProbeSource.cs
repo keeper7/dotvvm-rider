@@ -5,16 +5,16 @@ using DotVVM.LanguageServer.Model;
 namespace DotVVM.LanguageServer.Configuration;
 
 /// <summary>
-/// Stupeň 3: spustí probe proces, který načte sestavenou assembly projektu
-/// a vrátí skutečnou konfiguraci. Dostupné po sestavení projektu.
+/// Tier 3: runs the probe process, which loads the project's compiled assembly and returns the
+/// real configuration. Available once the project has been built.
 /// </summary>
 public sealed class AssemblyProbeSource : IConfigurationSource
 {
-    /// <summary>Pevně zadaná cesta k probe; null znamená výběr podle TFM cílové assembly.</summary>
+    /// <summary>A fixed probe path; null means picking one by the target assembly's TFM.</summary>
     private readonly string? _fixedProbePath;
     private readonly TimeSpan _timeout;
 
-    /// <summary>Varianty probe od nejstarší; novější runtime načte i starší assembly.</summary>
+    /// <summary>Probe variants, oldest first; a newer runtime also loads an older assembly.</summary>
     private static readonly string[] ProbeFrameworks = { "net8.0", "net9.0" };
 
     public AssemblyProbeSource(string? probePath = null, TimeSpan? timeout = null)
@@ -42,9 +42,9 @@ public sealed class AssemblyProbeSource : IConfigurationSource
     }
 
     /// <summary>
-    /// Vybere variantu probe podle TFM cílové assembly. Probe musí běžet na runtime
-    /// alespoň tak novém, jako je cílový projekt — net8.0 host neumí načíst assembly
-    /// cílenou na net9.0. Když TFM nejde přečíst, vezme nejnovější dostupnou variantu.
+    /// Picks the probe variant by the target assembly's TFM. The probe must run on a runtime at
+    /// least as new as the target project: a net8.0 host cannot load an assembly targeting
+    /// net9.0. When the TFM cannot be read, the newest available variant is used.
     /// </summary>
     private static string? ResolveProbeFor(string targetAssembly)
     {
@@ -63,7 +63,7 @@ public sealed class AssemblyProbeSource : IConfigurationSource
             var index = Array.IndexOf(ProbeFrameworks, wanted);
             if (index >= 0)
             {
-                // První varianta, která není starší než cílový projekt
+                // The first variant that is not older than the target project
                 var match = candidates.FirstOrDefault(
                     c => Array.IndexOf(ProbeFrameworks, c.Tfm) >= index);
                 if (match.Path is not null) return match.Path;
@@ -74,8 +74,8 @@ public sealed class AssemblyProbeSource : IConfigurationSource
     }
 
     /// <summary>
-    /// Přečte TFM z runtimeconfig.json vedle assembly, například "net9.0".
-    /// Veřejné kvůli testovatelnosti.
+    /// Reads the TFM from the runtimeconfig.json next to the assembly, for example "net9.0".
+    /// Public for testability.
     /// </summary>
     public static string? ReadTargetFramework(string assemblyPath)
     {
@@ -97,7 +97,7 @@ public sealed class AssemblyProbeSource : IConfigurationSource
         }
     }
 
-    /// <summary>Najde nejnovější sestavenou assembly projektu v bin/.</summary>
+    /// <summary>Finds the newest compiled assembly of the project under bin/.</summary>
     private static string? FindProjectAssembly(string projectDir)
     {
         var root = FindProjectRoot(projectDir);
@@ -160,12 +160,12 @@ public sealed class AssemblyProbeSource : IConfigurationSource
         }
         catch (OperationCanceledException)
         {
-            try { process.Kill(entireProcessTree: true); } catch { /* už skončil */ }
+            try { process.Kill(entireProcessTree: true); } catch { /* already gone */ }
             return null;
         }
     }
 
-    /// <summary>Veřejné kvůli testovatelnosti bez spouštění procesu.</summary>
+    /// <summary>Public so it can be tested without starting a process.</summary>
     public static ControlRegistry? ParseProbeOutput(string json)
     {
         try

@@ -18,8 +18,8 @@ object DirectiveColors {
 }
 
 /**
- * Obarví direktivy v hlavičce souboru. Anotuje se celý soubor najednou, protože direktivy
- * nemají vlastní PSI uzel — parser je vidí jako obyčejný text (viz úkol 2b).
+ * Colours the directives in the file header. The whole file is annotated at once because
+ * directives have no PSI node of their own: the parser sees them as plain text.
  */
 class DirectiveAnnotator : Annotator {
 

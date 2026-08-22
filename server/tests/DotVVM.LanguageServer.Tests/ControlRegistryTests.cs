@@ -70,7 +70,7 @@ public class ControlRegistryTests
     [Fact]
     public void GetControlReturnsNullForMarkupControl()
     {
-        // markup kontrolka nemá typ v seznamu controls — vlastnosti neznáme
+        // a markup control has no type in the controls list, so its properties are unknown
         Assert.Null(BuildRegistry().GetControl("cc", "Address"));
     }
 

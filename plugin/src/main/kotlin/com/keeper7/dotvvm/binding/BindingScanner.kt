@@ -5,10 +5,10 @@ enum class BindingKind { SINGLE, DOUBLE }
 data class BindingMatch(val start: Int, val end: Int, val kind: BindingKind)
 
 /**
- * Najde binding výrazy v textu. Na rozdíl od regexu správně zpracuje
- * vnořené složené závorky a složené závorky uvnitř řetězcových literálů.
+ * Finds binding expressions in text. Unlike a regex it handles nested braces and braces
+ * inside string literals correctly.
  *
- * Bez závislosti na IntelliJ API — testovatelné obyčejným JUnit testem.
+ * Free of IntelliJ API, so it is testable with a plain JUnit test.
  */
 object BindingScanner {
 
@@ -36,7 +36,7 @@ object BindingScanner {
         return result
     }
 
-    /** Ověří, že za otevírací závorkou následuje známé klíčové slovo a dvojtečka. */
+    /** Checks that a known keyword followed by a colon comes after the opening brace. */
     private fun hasKnownKeyword(text: String, from: Int): Boolean {
         var j = from
         while (j < text.length && text[j].isWhitespace()) j++
@@ -49,8 +49,8 @@ object BindingScanner {
     }
 
     /**
-     * Vrátí index za koncem bindingu, nebo -1 když binding není ukončený.
-     * Sleduje hloubku závorek a stav řetězcového literálu.
+     * Returns the index past the end of the binding, or -1 when the binding is unterminated.
+     * Tracks brace depth and whether the scan is inside a string literal.
      */
     private fun findEnd(text: String, contentStart: Int, isDouble: Boolean): Int {
         var depth = 1
@@ -61,7 +61,7 @@ object BindingScanner {
             val c = text[i]
             when {
                 quote != null -> {
-                    if (c == '\\') i++            // escape sekvence — přeskoč další znak
+                    if (c == '\\') i++            // escape sequence: skip the next character
                     else if (c == quote) quote = null
                 }
                 c == '"' || c == '\'' -> quote = c

@@ -3,20 +3,20 @@ using DotVVM.LanguageServer.Model;
 namespace DotVVM.LanguageServer.Configuration;
 
 /// <summary>
-/// Zdroj informací o kontrolkách. Implementace tvoří tři stupně rostoucí přesnosti:
-/// vestavěné hodnoty, serialized config, assembly projektu.
+/// A source of information about controls. The implementations form three tiers of increasing
+/// accuracy: built-in values, the serialized config, and the project's assembly.
 /// </summary>
 public interface IConfigurationSource
 {
-    /// <summary>Krátký název zobrazovaný ve status baru IDE.</summary>
+    /// <summary>Short name shown in the IDE status bar.</summary>
     string Name { get; }
 
     /// <summary>
-    /// Zda zdroj vidí prefixy registrované v projektu. Vestavěné hodnoty je nevidí,
-    /// takže na jejich základě nelze hlásit neznámý prefix jako chybu.
+    /// Whether the source can see the prefixes registered in the project. Built-in values cannot,
+    /// so an unknown prefix must not be reported as an error on their basis.
     /// </summary>
     bool KnowsProjectPrefixes { get; }
 
-    /// <summary>Vrátí registry, nebo null, není-li zdroj k dispozici.</summary>
+    /// <summary>Returns the registry, or null when the source is unavailable.</summary>
     Task<ControlRegistry?> LoadAsync(string projectDir, CancellationToken ct);
 }
