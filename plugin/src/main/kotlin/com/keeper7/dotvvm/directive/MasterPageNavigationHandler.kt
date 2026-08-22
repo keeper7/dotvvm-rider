@@ -10,11 +10,11 @@ import com.keeper7.dotvvm.lang.DotHtmlFileType
 import com.keeper7.dotvvm.lang.DotMasterFileType
 
 /**
- * Skok z `@masterPage` na odkazovaný soubor. Cesta je relativní ke kořeni projektu,
- * stejně jako ji chápe DotVVM za běhu.
+ * Navigation from `@masterPage` to the file it references. The path is relative to the project
+ * root, the same way DotVVM reads it at run time.
  *
- * Direktivy, které ukazují na .NET typ (`@viewModel`, `@baseType`), sem nepatří —
- * ty umí rozřešit jen LSP server, který má registr kontrolek a sestavenou assembly.
+ * Directives pointing at a .NET type (`@viewModel`, `@baseType`) do not belong here: only the
+ * LSP server can resolve those, since it has the control registry and the compiled assembly.
  */
 class MasterPageNavigationHandler : GotoDeclarationHandler {
 
@@ -36,8 +36,8 @@ class MasterPageNavigationHandler : GotoDeclarationHandler {
         } ?: return null
         if (directive.value.isEmpty()) return null
 
-        // Cesta je relativní ke kořeni obsahu; projektů s více kořeny se to netýká často,
-        // ale procházet je všechny je levné a nespoléhá to na odhad kořene.
+        // The path is relative to a content root. Projects with several roots are rare, but
+        // walking all of them is cheap and avoids having to guess which root is the right one.
         val target = ProjectRootManager.getInstance(file.project).contentRoots
             .firstNotNullOfOrNull { it.findFileByRelativePath(directive.value) } ?: return null
         val psi = PsiManager.getInstance(file.project).findFile(target) ?: return null

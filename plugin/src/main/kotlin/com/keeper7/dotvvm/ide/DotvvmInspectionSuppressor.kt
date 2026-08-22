@@ -8,12 +8,12 @@ import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlTag
 
 /**
- * Umlčí platformní inspekce, které o DotVVM nemohou nic vědět.
+ * Silences the platform inspections that cannot know anything about DotVVM.
  *
- * Prefix kontrolky se v DotVVM nedeklaruje v souboru přes `xmlns:`, ale registruje
+ * A control prefix is not declared in the file with `xmlns:` but registered
  * v `DotvvmStartup.cs`, a properties jako `Visible` nebo `Class-required` jsou DotVVM
- * rozšíření HTML elementů. Obojí se ptá souboru, takže by podtrhlo správný kód. Co
- * v projektu opravdu existuje, ví jen LSP server — a ten to hlásí vlastní diagnostikou.
+ * extensions of HTML elements. Both ask the file, so they would underline correct code. What
+ * really exists in the project is known only to the LSP server, which reports it itself.
  */
 class DotvvmInspectionSuppressor : InspectionSuppressor {
 
@@ -27,16 +27,16 @@ class DotvvmInspectionSuppressor : InspectionSuppressor {
         SuppressQuickFix.EMPTY_ARRAY
 
     /**
-     * Rozhoduje úzce: mlčí jen o atributech, které DotVVM opravdu zavádí. Překlep
-     * v běžném HTML atributu (`clas`) se hlásit musí dál, jinak by potlačení škodilo víc,
-     * než pomáhá.
+     * Decides narrowly: it stays silent only about attributes DotVVM actually introduces. A
+     * typo in an ordinary HTML attribute (`clas`) must still be reported, or the suppression
+     * would do more harm than good.
      */
     private fun isDotvvmAttribute(element: PsiElement): Boolean {
         val attribute = element as? XmlAttribute
             ?: PsiTreeUtil.getParentOfType(element, XmlAttribute::class.java)
             ?: return false
 
-        // Na kontrolce s prefixem jsou všechny atributy jejími properties
+        // On a prefixed control every attribute is one of its properties
         val tag = PsiTreeUtil.getParentOfType(attribute, XmlTag::class.java)
         if (tag != null && tag.name.contains(':')) return true
 
@@ -48,17 +48,17 @@ class DotvvmInspectionSuppressor : InspectionSuppressor {
         const val UNBOUND_PREFIX = "XmlUnboundNsPrefix"
         const val UNKNOWN_ATTRIBUTE = "HtmlUnknownAttribute"
 
-        /** Properties `HtmlGenericControl`, tedy DotVVM properties psané přímo na HTML elementu. */
+        /** Properties of `HtmlGenericControl`: DotVVM properties written on an HTML element. */
         val HTML_EXTENSIONS = setOf(
             "Visible", "DataContext", "IncludeInPage", "InnerText"
         )
 
         /**
-         * Zbylé dva druhy properties, poznatelné podle zápisu:
-         * tečka je *attached property* (`Validator.Value` — property `Value` připojená
-         * třídou `Validator`), pomlčka je *property group* (`Class-required` — skupina
-         * `Class-`, klíč `required`). Významově jde o properties stejně jako výše,
-         * jen se liší tím, kde jsou deklarované.
+         * The other two kinds of properties, recognisable by their spelling: a dot marks an
+         * *attached property* (`Validator.Value` — property `Value` attached by the `Validator`
+         * class), a dash marks a *property group* (`Class-required` — group `Class-`, key
+         * `required`). They are properties just as much as the ones above; they differ only in
+         * where they are declared.
          */
         val PREFIXES = listOf(
             "Validator.", "Validation.", "Events.", "PostBack.", "RenderSettings.",

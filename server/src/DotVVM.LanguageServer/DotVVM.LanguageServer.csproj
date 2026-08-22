@@ -11,9 +11,9 @@
   </ItemGroup>
 
   <!--
-    Probe se sestaví do podadresáře probe/ vedle serveru; tam ho hledá
+    The probe builds into the probe/ subdirectory next to the server, where it is found by
     AssemblyProbeSource.DefaultProbePath(). ReferenceOutputAssembly=false,
-    protože probe se spouští jako samostatný proces, nelinkuje se.
+    because the probe runs as a separate process and is not linked.
   -->
   <ItemGroup>
     <ProjectReference Include="..\DotVVM.LanguageServer.Probe\DotVVM.LanguageServer.Probe.csproj"
@@ -23,8 +23,8 @@
   </ItemGroup>
 
   <!--
-    Zkopíruje všechny TFM varianty probe, takže výsledek je probe/net8.0/… a
-    probe/net9.0/…. Cestu k té správné skládá AssemblyProbeSource za běhu.
+    Copies every TFM variant of the probe, so the result is probe/net8.0/… and probe/net9.0/….
+    AssemblyProbeSource composes the path to the right one at run time.
   -->
   <Target Name="CopyProbeOutput" AfterTargets="Build">
     <ItemGroup>

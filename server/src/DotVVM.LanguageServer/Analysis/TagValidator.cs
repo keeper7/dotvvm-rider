@@ -9,20 +9,20 @@ public record ValidationIssue(
 
 /// <summary>
 /// Kontroluje tagy s prefixem proti registru kontrolek.
-/// Bez závislosti na LSP — překlad na protokolové typy dělá handler.
+/// Free of LSP dependencies; the handler converts to protocol types.
 /// </summary>
 public static class TagValidator
 {
     /// <param name="knowsProjectPrefixes">
-    /// Zda registr pochází ze zdroje, který zná prefixy registrované v projektu.
-    /// Vestavěné výchozí hodnoty je znát nemohou, takže na jejich základě nelze
-    /// cizí prefix prohlásit za chybu — uživatel by dostal chybu za správný kód.
+    /// Whether the registry came from a source that knows the prefixes registered in the
+    /// project. Built-in defaults cannot know them, so a foreign prefix must not be declared an
+    /// error on their basis: the user would get an error for correct code.
     /// </param>
     public static IReadOnlyList<ValidationIssue> Validate(
         string text, ControlRegistry registry, bool knowsProjectPrefixes)
     {
-        // Prázdný registr znamená, že o projektu nic nevíme. Hlásit v takové situaci
-        // chyby by znamenalo zaplavit uživatele falešnými poplachy.
+        // An empty registry means we know nothing about the project. Reporting errors in that
+        // state would flood the user with false alarms.
         if (registry.AllPrefixes.Count == 0) return Array.Empty<ValidationIssue>();
 
         var issues = new List<ValidationIssue>();
@@ -31,7 +31,7 @@ public static class TagValidator
         {
             if (!registry.IsKnownPrefix(tag.Prefix))
             {
-                // Bez znalosti projektových prefixů mlčíme; proč, vysvětluje status bar.
+                // Without knowledge of the project's prefixes we stay silent; the status bar explains why.
                 if (!knowsProjectPrefixes) continue;
 
                 issues.Add(new ValidationIssue(

@@ -1,12 +1,12 @@
 namespace DotVVM.LanguageServer.Analysis;
 
-/// <summary>Výskyt tagu s prefixem, se souřadnicemi v konvenci LSP (od nuly).</summary>
+/// <summary>An occurrence of a prefixed tag, with LSP-style zero-based coordinates.</summary>
 public record TagOccurrence(string Prefix, string TagName, int Line, int Character, int Length);
 
 /// <summary>
-/// Najde v textu tagy s prefixem (například &lt;dot:Button&gt;). Nejde o plnohodnotný
-/// HTML parser — hledá jen to, co je potřeba pro validaci a completion.
-/// Bez závislosti na LSP i na DotVVM.
+/// Finds prefixed tags in text (&lt;dot:Button&gt;, for example). This is not a full HTML parser:
+/// it looks only for what validation and completion need.
+/// Free of both LSP and DotVVM dependencies.
 /// </summary>
 public static class DothtmlScanner
 {
@@ -31,7 +31,7 @@ public static class DothtmlScanner
 
             if (c != '<') { i++; continue; }
 
-            // Komentáře, DOCTYPE a zpracovací instrukce přeskoč celé
+            // Skip comments, DOCTYPE and processing instructions whole
             if (Matches(text, i, "<!--"))
             {
                 var end = text.IndexOf("-->", i, StringComparison.Ordinal);
@@ -53,7 +53,7 @@ public static class DothtmlScanner
             var nameStart = i + 1;
             if (nameStart < text.Length && text[nameStart] == '/')
             {
-                i++;                                  // uzavírací tag ignorujeme
+                i++;                                  // closing tags are ignored
                 continue;
             }
 

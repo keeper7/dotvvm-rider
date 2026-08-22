@@ -23,17 +23,17 @@ class UnknownAttributeTest : BasePlatformTestCase() {
             "  <p DataContext=\"{value: _c.Item}\" IncludeInPage=\"true\">z</p>\n" +
             "</div>"
         )
-        assertEmpty("Hlášeno: " + found.joinToString(), found)
+        assertEmpty("Reported: " + found.joinToString(), found)
     }
 
     fun testAttributesOfPrefixedControlsAreAccepted() {
-        // Na kontrolce jsou všechny atributy její properties, platforma je znát nemůže
+        // On a control every attribute is one of its properties; the platform cannot know them
         val found = warnings("<cc:MyControl Caption=\"Street\" Value=\"{value: _c.Street}\" />")
-        assertEmpty("Hlášeno: " + found.joinToString(), found)
+        assertEmpty("Reported: " + found.joinToString(), found)
     }
 
     fun testTypoInPlainHtmlAttributeIsStillReported() {
-        // Suppressor musí být úzký — překlep v běžném HTML atributu se hlásit má
+        // The suppressor must be narrow: a typo in an ordinary HTML attribute must still be reported
         val found = warnings("<div clas=\"x\">y</div>")
         assertNotEmpty(found)
     }

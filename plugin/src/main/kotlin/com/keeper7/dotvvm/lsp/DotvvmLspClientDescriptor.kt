@@ -14,8 +14,8 @@ import com.intellij.platform.lsp.api.customization.LspOnTypeFormattingDisabled
 import java.nio.file.Path
 
 /**
- * Popisuje spojení s LSP serverem. V terminologii platformy je *klientem* IDE,
- * takže tato třída sídlí na straně klienta a server je externí proces.
+ * Describes the connection to the LSP server. In the platform's terminology the IDE is the
+ * *client*, so this class lives on the client side and the server is the external process.
  */
 class DotvvmLspClientDescriptor(project: Project, private val serverDll: Path)
     : ProjectWideLspClientDescriptor(project, "DotVVM") {
@@ -31,10 +31,10 @@ class DotvvmLspClientDescriptor(project: Project, private val serverDll: Path)
         DotvvmLsp4jClient(handler, project)
 
     /**
-     * Formátování, skládání a strukturu souboru poskytuje nativní HTML podpora lépe než
-     * LSP — server vidí soubor jen jako text. Vypnuté proto, aby se obě vrstvy nepraly
-     * o stejnou věc. Completion, hover, go-to-definition a diagnostiky zůstávají na LSP,
-     * protože stojí na znalosti projektu, kterou plugin nemá.
+     * Formatting, folding and document structure are served better by the native HTML support
+     * than by LSP, since the server sees the file as text only. They are switched off so the two
+     * layers do not fight over the same thing. Completion, hover, go-to-definition and
+     * diagnostics stay with LSP, because they rest on project knowledge the plugin lacks.
      */
     override val lspCustomization: LspCustomization = object : LspCustomization() {
         override val formattingCustomizer = LspFormattingDisabled

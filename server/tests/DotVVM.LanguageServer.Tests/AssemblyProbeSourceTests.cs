@@ -20,7 +20,7 @@ public class AssemblyProbeSourceTests
     [Fact]
     public async Task ReturnsNullWhenProbeExecutableMissing()
     {
-        // Zdroj nesmí vyhodit výjimku, když probe není k dispozici
+        // The source must not throw when the probe is unavailable
         var source = new AssemblyProbeSource(probePath: "/nonexistent/probe");
         Assert.Null(await source.LoadAsync(Path.GetTempPath(), default));
     }
@@ -48,11 +48,11 @@ public class AssemblyProbeSourceTests
     }
 
     /// <summary>
-    /// Probe se musí sestavit do podadresáře probe/ ve výstupu serveru — tam ho
-    /// za běhu hledá DefaultProbePath() přes AppContext.BaseDirectory. Kdyby se
-    /// přestal kopírovat, LoadAsync by mlčky vracel null a stupeň 3 by nikdy
-    /// nenaběhl. Kontroluje se výstup serveru, ne testů: do output adresáře testů
-    /// se kopíruje jen serverová dll, podadresář probe/ už ne.
+    /// The probe must build into the probe/ subdirectory of the server output, which is where
+    /// DefaultProbePath() looks for it at run time via AppContext.BaseDirectory. If it stopped
+    /// being copied, LoadAsync would silently return null and tier 3 would never start. The
+    /// server output is checked, not the test one: only the server dll is copied into the test
+    /// output directory, not the probe/ subdirectory.
     /// </summary>
     [Fact]
     public void ProbeIsDeployedIntoServerOutput()
@@ -61,8 +61,8 @@ public class AssemblyProbeSourceTests
     }
 
     /// <summary>
-    /// Ostré ověření celého stupně 3: spustí probe proti sestavené fixture
-    /// aplikaci. Přeskočí se, dokud fixture není sestavená.
+    /// A live check of the whole of tier 3: runs the probe against the built fixture
+    /// application. Skipped until the fixture has been built.
     /// </summary>
     [Fact]
     public async Task ReadsRegistrationsFromBuiltFixtureApp()
@@ -78,14 +78,14 @@ public class AssemblyProbeSourceTests
         var registry = await new AssemblyProbeSource(probe).LoadAsync(appDir, default);
 
         Assert.NotNull(registry);
-        // cc:MyControl je registrovaná jen v DotvvmStartup.cs — z markupu se vyčíst nedá
+        // cc:MyControl is registered only in DotvvmStartup.cs; it cannot be read from markup
         Assert.True(registry!.IsKnownTag("cc", "MyControl"));
         Assert.True(registry.IsKnownPrefix("dot"));
     }
 
     /// <summary>
-    /// Najde varianty probe ve výstupu serverového projektu. Layout je
-    /// probe/&lt;tfm&gt;/DotVVM.LanguageServer.Probe.dll — klíčem je název TFM složky.
+    /// Finds the probe variants in the server project's output. The layout is
+    /// probe/&lt;tfm&gt;/DotVVM.LanguageServer.Probe.dll, keyed by the TFM folder name.
     /// </summary>
     private static Dictionary<string, string> FindDeployedProbes()
     {
@@ -109,9 +109,9 @@ public class AssemblyProbeSourceTests
     }
 
     /// <summary>
-    /// Kořen repozitáře poznáme podle .git. Podle podadresáře fixtures se řídit nelze —
-    /// stejný název má i adresář s testovacími daty, takže by hledání skončilo hned
-    /// v output adresáři testů.
+    /// The repository root is recognised by .git. A fixtures subdirectory cannot be used as the
+    /// marker: the test data directory has the same name, so the search would stop right away in
+    /// the test output directory.
     /// </summary>
     private static string? FindRepositoryRoot()
     {
@@ -151,9 +151,9 @@ public class AssemblyProbeSourceTests
     }
 
     /// <summary>
-    /// Probe musí být k dispozici pro víc TFM. S jediným net8.0 probem nelze načíst
-    /// assembly projektu cíleného na net9.0 — runtime odmítne System.Runtime 9.0.0.0
-    /// a stupeň 3 mlčky vypadne.
+    /// The probe must be available for several TFMs. With a net8.0 probe alone, the assembly of
+    /// a project targeting net9.0 cannot be loaded — the runtime rejects System.Runtime 9.0.0.0
+    /// and tier 3 silently drops out.
     /// </summary>
     [Fact]
     public void ProbeIsDeployedForMultipleTargetFrameworks()

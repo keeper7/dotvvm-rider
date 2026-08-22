@@ -4,10 +4,10 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>DotVVM.LanguageServer.Probe</RootNamespace>
     <!--
-      Přebíjí TargetFramework z Directory.Build.props. Probe musí běžet na runtime
-      alespoň tak novém, jako je cílový projekt: net8.0 host neumí načíst assembly
-      cílenou na net9.0 (odmítne System.Runtime 9.0.0.0). Server proto vybírá
-      variantu podle runtimeconfig.json cílové assembly.
+      Overrides TargetFramework from Directory.Build.props. The probe must run on a runtime at
+      least as new as the target project: a net8.0 host cannot load an assembly targeting net9.0
+      (it rejects System.Runtime 9.0.0.0). The server therefore picks the variant by the target
+      assembly's runtimeconfig.json.
     -->
     <TargetFramework></TargetFramework>
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
@@ -18,9 +18,9 @@
   </ItemGroup>
 
   <!--
-    Cílové projekty jsou ASP.NET Core aplikace a jejich typy odkazují na
-    Microsoft.AspNetCore.*. Ty žijí ve sdíleném frameworku, ne v NuGet balíčcích,
-    takže je AssemblyDependencyResolver nedohledá. Bez tohoto odkazu probe skončí
+    Target projects are ASP.NET Core applications and their types reference
+    Microsoft.AspNetCore.*. Those live in the shared framework, not in NuGet packages, so
+    AssemblyDependencyResolver cannot find them. Without this reference the probe fails with
     na "Could not load Microsoft.AspNetCore.Mvc.RazorPages".
   -->
   <ItemGroup>

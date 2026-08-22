@@ -35,7 +35,7 @@ public class HoverHandler : IHoverHandler
         var text = _documents.Get(uri.ToString());
         if (text is null) return null;
 
-        // Najdi tag, na kterém kurzor stojí
+        // Find the tag the caret is on
         var tag = DothtmlScanner.ScanTags(text).FirstOrDefault(t =>
             t.Line == request.Position.Line &&
             request.Position.Character >= t.Character &&

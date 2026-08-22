@@ -62,7 +62,7 @@ public class DothtmlScannerTests
     [Fact]
     public void HandlesNestedPropertyTag()
     {
-        // <ItemTemplate> uvnitř kontrolky nemá prefix, takže se neohlásí
+        // <ItemTemplate> inside a control has no prefix, so it is not reported
         var tags = DothtmlScanner.ScanTags("<dot:Repeater><ItemTemplate>x</ItemTemplate></dot:Repeater>");
         Assert.Single(tags);
     }

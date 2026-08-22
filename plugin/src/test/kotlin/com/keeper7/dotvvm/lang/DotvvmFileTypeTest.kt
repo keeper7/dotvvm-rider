@@ -12,12 +12,12 @@ class DotvvmFileTypeTest : BasePlatformTestCase() {
 
     fun testDothtmlHasHtmlPsi() {
         val file = myFixture.configureByText("Page.dothtml", "<html><body>text</body></html>")
-        assertTrue("očekáván XmlFile, byl ${file.javaClass.name}", file is XmlFile)
+        assertTrue("expected an XmlFile, got ${file.javaClass.name}", file is XmlFile)
     }
 
     /**
-     * Platforma hlásí varování, když dva file typy sdílejí getDisplayName() —
-     * dědí se z jazyka, takže bez přepsání vrátí všechny tři "DotVVM".
+     * The platform warns when two file types share getDisplayName(); it is inherited from the
+     * language, so without an override all three would return "DotVVM".
      */
     fun testFileTypesHaveDistinctDisplayNames() {
         val names = listOf(
@@ -25,7 +25,7 @@ class DotvvmFileTypeTest : BasePlatformTestCase() {
             DotControlFileType.INSTANCE.displayName,
             DotMasterFileType.INSTANCE.displayName,
         )
-        assertEquals("zobrazovaná jména musí být unikátní, byla: $names", 3, names.toSet().size)
+        assertEquals("display names must be unique, they were: $names", 3, names.toSet().size)
     }
 
     fun testDotcontrolAndDotmasterAreRecognized() {

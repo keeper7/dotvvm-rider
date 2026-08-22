@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 
 namespace DotVVM.LanguageServer.Documents;
 
-/// <summary>Obsah otevřených dokumentů, klíčovaný podle URI.</summary>
+/// <summary>Contents of the open documents, keyed by URI.</summary>
 public sealed class DocumentStore
 {
     private readonly ConcurrentDictionary<string, string> _documents = new(StringComparer.Ordinal);

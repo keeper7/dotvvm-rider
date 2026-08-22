@@ -12,13 +12,13 @@ class InspectionSuppressorTest : BasePlatformTestCase() {
         val tag = file.findElementAt(file.text.indexOf("dot:Button"))!!
 
         assertTrue(
-            "Inspekce nevázaného prefixu musí být pro DotVVM potlačena",
+            "The unbound prefix inspection must be suppressed for DotVVM",
             DotvvmInspectionSuppressor().isSuppressedFor(tag, "XmlUnboundNsPrefix")
         )
     }
 
     fun testOtherInspectionsAreNotSuppressed() {
-        // Suppressor musí být úzký — nesmí umlčet všechno
+        // The suppressor must be narrow: it must not silence everything
         val file = myFixture.configureByText(
             "Sample.dothtml",
             "<html><body><dot:Button Text=\"x\" /></body></html>"

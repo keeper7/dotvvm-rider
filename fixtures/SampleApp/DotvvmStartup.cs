@@ -4,8 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace SampleApp
 {
     /// <summary>
-    /// Registrace prefixů a kontrolek. Právě odsud si je bere probe proces
-    /// jazykového serveru — v souboru .dothtml se prefixy nedeklarují.
+    /// Registration of prefixes and controls. This is exactly where the language server's probe
+    /// process reads them from; prefixes are not declared in a .dothtml file.
     /// </summary>
     public class DotvvmStartup : IDotvvmStartup, IDotvvmServiceConfigurator
     {

@@ -8,12 +8,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DotVVM.LanguageServer.Probe;
 
 /// <summary>
-/// Načte sestavenou assembly DotVVM projektu, získá z ní konfiguraci
-/// a vypíše registrace kontrolek jako JSON. Replikuje postup oficiálního
-/// DotVVM.Compiler, protože ConfigurationInitializer je internal.
+/// Loads the compiled assembly of a DotVVM project, obtains its configuration and prints the
+/// control registrations as JSON. It mirrors what the official DotVVM.Compiler does, because
+/// ConfigurationInitializer is internal.
 ///
-/// Běží jako samostatný proces: pád uživatelského DotvvmStartup ani zamčený
-/// soubor assembly tak neovlivní jazykový server.
+/// It runs as a separate process, so neither a crash in the user's DotvvmStartup nor a locked
+/// assembly file can affect the language server.
 /// </summary>
 public static class Program
 {
@@ -43,8 +43,8 @@ public static class Program
     }
 
     /// <summary>
-    /// Načte assembly i s jejími závislostmi. Tím se použije verze DotVVM,
-    /// kterou má cílový projekt — nikoli ta, proti které byl probe sestaven.
+    /// Loads the assembly together with its dependencies, so the DotVVM version used is the one
+    /// the target project has, not the one the probe was built against.
     /// </summary>
     private static Assembly LoadWithDependencies(string assemblyPath)
     {
@@ -60,9 +60,9 @@ public static class Program
     }
 
     /// <summary>
-    /// Vrátí typy, které šlo načíst. Velká aplikace obvykle obsahuje typy odkazující
-    /// na assembly, které tu nejsou k dispozici; GetTypes() by kvůli jedinému takovému
-    /// typu shodil celý rozbor, ačkoli DotvvmStartup načíst jde.
+    /// Returns the types that could be loaded. A large application usually contains types
+    /// referencing assemblies that are not available here; GetTypes() would fail the whole scan
+    /// over a single such type, even though DotvvmStartup itself loads fine.
     /// </summary>
     private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
     {
@@ -78,9 +78,9 @@ public static class Program
 
     private static DotvvmConfiguration BuildConfiguration(Assembly assembly, string projectDir)
     {
-        // Uživatelské DotvvmStartup si běžně tahá IConfiguration z DI. CreateDefault()
-        // ji neregistruje, takže by rozbor skončil na "No service for type IConfiguration".
-        // Prázdná konfigurace stačí — z konfigurace se čtou hodnoty, ne registrace kontrolek.
+        // A user's DotvvmStartup routinely resolves IConfiguration from DI. CreateDefault()
+        // does not register it, so the scan would fail with "No service for type IConfiguration".
+        // An empty configuration is enough: it supplies values, not control registrations.
         var config = DotvvmConfiguration.CreateDefault(services =>
             services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build()));
         config.ApplicationPhysicalPath = projectDir;

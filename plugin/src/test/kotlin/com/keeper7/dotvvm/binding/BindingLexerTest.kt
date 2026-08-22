@@ -4,12 +4,12 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 /**
- * Dědí BasePlatformTestCase, protože IElementType se registruje do globálního
- * registru platformy — v čistém JUnit testu bez Application by konstrukce
+ * Extends BasePlatformTestCase because IElementType registers itself in a global platform
+ * registry; in a plain JUnit test without an Application its construction
  * BindingTokenType selhala.
  *
- * Naproti tomu BindingScannerTest je čistý JUnit test, protože skener
- * nepoužívá žádné IntelliJ API. To je záměr popsaný ve struktuře souborů.
+ * BindingScannerTest, by contrast, is a plain JUnit test because the scanner uses no IntelliJ
+ * API at all. That split is deliberate and described in the file structure.
  */
 class BindingLexerTest : BasePlatformTestCase() {
 
@@ -66,7 +66,7 @@ class BindingLexerTest : BasePlatformTestCase() {
         lexer.start(text, 0, text.length, 0)
         var pos = 0
         while (lexer.tokenType != null) {
-            assertEquals("mezera v pokrytí na pozici $pos", pos, lexer.tokenStart)
+            assertEquals("gap in coverage at offset $pos", pos, lexer.tokenStart)
             pos = lexer.tokenEnd
             lexer.advance()
         }

@@ -40,7 +40,7 @@ public class CompletionHandler : ICompletionHandler
 
         var prefix = FindPrefixBeforeCursor(text, request.Position);
 
-        // Za "<prefix:" nabídni kontrolky daného prefixu, jinak nabídni prefixy samotné
+        // After "<prefix:" offer that prefix's controls, otherwise offer the prefixes themselves
         if (prefix is not null && registry.IsKnownPrefix(prefix))
         {
             return new CompletionList(registry.GetTagsForPrefix(prefix).Select(tag =>
@@ -62,7 +62,7 @@ public class CompletionHandler : ICompletionHandler
             }));
     }
 
-    /// <summary>Vrátí prefix, pokud kurzor stojí za "&lt;prefix:".</summary>
+    /// <summary>Returns the prefix when the caret sits after "&lt;prefix:".</summary>
     private static string? FindPrefixBeforeCursor(string text, Position position)
     {
         var lines = text.Split('\n');

@@ -50,8 +50,8 @@ public class DefinitionHandler : IDefinitionHandler
     }
 
     /// <summary>
-    /// Najde soubor obsahující deklaraci typu. Hledá podle posledního segmentu
-    /// názvu typu, protože soubor se často jmenuje jinak než view.
+    /// Finds the file declaring the type. It searches by the last segment of the type name,
+    /// because the file is often named differently from the view.
     /// </summary>
     private static string? FindViewModelFile(string? startDir, string typeName)
     {
@@ -68,7 +68,7 @@ public class DefinitionHandler : IDefinitionHandler
             return file;
         }
 
-        // Soubor se může jmenovat jinak — prohledej obsah
+        // The file may have a different name, so search the contents
         foreach (var file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
         {
             if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") ||

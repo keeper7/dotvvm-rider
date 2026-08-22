@@ -63,7 +63,7 @@ class BindingLexer : LexerBase() {
         val start = pos
         while (pos < endOffset && (buffer[pos].isLetterOrDigit() || buffer[pos] == '_')) pos++
         val text = buffer.subSequence(start, pos).toString()
-        // klíčové slovo jen tehdy, následuje-li dvojtečka
+        // a keyword only when a colon follows
         var look = pos
         while (look < endOffset && buffer[look].isWhitespace()) look++
         val followedByColon = look < endOffset && buffer[look] == ':'

@@ -1,16 +1,16 @@
 namespace DotVVM.LanguageServer.Model;
 
-/// <summary>Kontrolka známá podle typu, včetně vlastností.</summary>
+/// <summary>A control known by its type, including its properties.</summary>
 public record ControlInfo(
     string FullTypeName,
     string? BaseType,
     string? DefaultContentProperty,
     IReadOnlyList<string> Properties)
 {
-    /// <summary>Jméno tagu, tedy poslední segment plného jména typu.</summary>
+    /// <summary>The tag name, that is the last segment of the full type name.</summary>
     public string TagName => FullTypeName[(FullTypeName.LastIndexOf('.') + 1)..];
 
-    /// <summary>Namespace typu, tedy vše před posledním segmentem.</summary>
+    /// <summary>The type's namespace, that is everything before the last segment.</summary>
     public string Namespace
     {
         get

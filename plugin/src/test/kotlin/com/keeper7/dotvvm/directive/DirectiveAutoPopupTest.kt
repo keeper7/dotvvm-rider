@@ -12,17 +12,17 @@ class DirectiveAutoPopupTest : BasePlatformTestCase() {
     }
 
     fun testPopupOpensRightAfterAtSign() {
-        assertTrue("Po zapsání @ se má nabídka otevřít hned", autoPopupAfterAt("@<caret>\n<html></html>"))
+        assertTrue("The popup must open as soon as @ is typed", autoPopupAfterAt("@<caret>\n<html></html>"))
     }
 
     fun testPopupDoesNotOpenInsideBody() {
-        // Zavináč v textu stránky direktivu neuvozuje
+        // An at sign in page text does not introduce a directive
         assertFalse(autoPopupAfterAt("<html><body>@<caret></body></html>"))
     }
 
     fun testOnlyDirectivesAreOfferedAfterAtSign() {
-        // Po @ nemá smysl nabízet HTML tagy — uživatel píše direktivu
-        // Prefix "v" sedne i na HTML tagy <var> a <video>, proto právě on
+        // After @ there is no point offering HTML tags: the user is typing a directive
+        // The prefix "v" also matches the HTML tags <var> and <video>, which is why it is used
         myFixture.configureByText("B.dothtml", "@v<caret>\n<html></html>")
         myFixture.completeBasic()
 

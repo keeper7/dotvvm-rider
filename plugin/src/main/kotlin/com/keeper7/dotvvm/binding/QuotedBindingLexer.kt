@@ -4,12 +4,13 @@ import com.intellij.lexer.DelegateLexer
 import com.intellij.lexer.Lexer
 
 /**
- * Předá HTML lexeru text, ve kterém jsou uvozovky uvnitř binding výrazů maskované.
+ * Hands the HTML lexer text in which quotes inside binding expressions are masked.
  *
- * Pokusy řídit lexer zvenčí selhaly: restart na jinou pozici `BaseHtmlLexer` zakazuje
- * a posouvání delegáta ho nechá ve stavu mimo tag. Maskování problém obchází dřív, než
- * vznikne — lexer dostane text, který je z pohledu HTML v pořádku, a odvede svou práci
- * beze změny. Offsety zůstávají shodné, protože náhrada je znak za znak.
+ * Attempts to steer the lexer from outside failed: `BaseHtmlLexer` forbids restarting at a
+ * different position, and stepping the delegate forward leaves it in a state outside the tag.
+ * Masking sidesteps the problem before it arises — the lexer receives text that is valid HTML
+ * and does its work unchanged. Offsets stay equal because the replacement is character for
+ * character.
  */
 class QuotedBindingLexer(delegate: Lexer) : DelegateLexer(delegate) {
 

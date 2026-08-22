@@ -1,7 +1,7 @@
 using DotVVM.Framework;
 
-// Minimální hostitel. Fixture se nikdy nespouští jako web — smyslem je,
-// aby šla sestavit, a probe proces tak měl skutečnou assembly k načtení.
+// A minimal host. The fixture is never run as a web application; the point is that it can be
+// built, so the probe process has a real assembly to load.
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDotVVM<SampleApp.DotvvmStartup>();
 

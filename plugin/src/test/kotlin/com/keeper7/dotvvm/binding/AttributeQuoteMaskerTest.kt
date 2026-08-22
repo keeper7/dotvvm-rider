@@ -10,13 +10,13 @@ class AttributeQuoteMaskerTest {
         val text = "<x A=\"{staticCommand: B ?? \"\"}\" C=\"{value: D}\" />"
         val masked = AttributeQuoteMasker.mask(text).toString()
 
-        assertEquals("délka se nesmí změnit", text.length, masked.length)
+        assertEquals("the length must not change", text.length, masked.length)
         assertEquals("<x A=\"{staticCommand: B ??   }\" C=\"{value: D}\" />", masked)
     }
 
     @Test fun leavesPlainAttributesAlone() {
         val text = "<div class=\"a\" id=\"b\">x</div>"
-        assertSame("bez bindingu se nemá kopírovat", text, AttributeQuoteMasker.mask(text))
+        assertSame("with no binding there should be no copy", text, AttributeQuoteMasker.mask(text))
     }
 
     @Test fun leavesBindingWithoutQuotesAlone() {
@@ -25,7 +25,7 @@ class AttributeQuoteMaskerTest {
     }
 
     @Test fun keepsClosingQuoteOfTheValue() {
-        // Uvozovka ukončující hodnotu je mimo binding a musí zůstat
+        // The quote ending the value sits outside the binding and must stay
         val text = "<x A=\"{value: B}\" C=\"d\" />"
         assertSame(text, AttributeQuoteMasker.mask(text))
     }

@@ -14,7 +14,7 @@ class MasterPageNavigationTest : BasePlatformTestCase() {
         val targets = MasterPageNavigationHandler()
             .getGotoDeclarationTargets(file.findElementAt(offset), offset, myFixture.editor)
 
-        assertNotNull("Navigace nenašla cíl", targets)
+        assertNotNull("Navigation found no target", targets)
         assertEquals("Site.dotmaster", (targets!!.single() as PsiFile).name)
     }
 
@@ -30,7 +30,7 @@ class MasterPageNavigationTest : BasePlatformTestCase() {
     }
 
     fun testNoTargetOutsideDirectiveValue() {
-        // Kurzor na názvu direktivy, ne na cestě — skákat není kam
+        // Caret on the directive name, not on the path: there is nowhere to jump
         val file = myFixture.configureByText(
             "Page.dothtml", "@masterPage Views/Site.dotmaster\n<html></html>")
         val offset = 3

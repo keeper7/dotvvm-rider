@@ -10,8 +10,9 @@ import com.keeper7.dotvvm.lang.DotHtmlFileType
 import com.keeper7.dotvvm.lang.DotMasterFileType
 
 /**
- * Nabízí názvy direktiv. Jen názvy — hodnoty (typ ViewModelu, cesta k master page) zná
- * pouze LSP server přes registr kontrolek a plugin je hádat nebude.
+ * Offers directive names. Names only: the values (the view model type, the path to the master
+ * page) are known solely to the LSP server through its control registry, and the plugin will
+ * not guess them.
  */
 class DirectiveCompletionContributor : CompletionContributor() {
 
@@ -34,14 +35,14 @@ class DirectiveCompletionContributor : CompletionContributor() {
             )
         }
 
-        // Za zavináčem uživatel píše direktivu, ne HTML tag. Bez tohoto by se do nabídky
-        // připletly <var> a <video>, protože prefix "v" sedne i na ně.
+        // After an at sign the user is typing a directive, not an HTML tag. Without this,
+        // <var> and <video> would join the list, because the prefix "v" matches them too.
         if (startsWithAtSign(file.text, parameters.offset)) result.stopHere()
     }
 
     /**
-     * Otevře nabídku hned po zapsání `@`, bez čekání na další znak — jinak by se
-     * direktiva napovídala až od druhého písmene.
+     * Opens the popup as soon as `@` is typed, without waiting for another character;
+     * otherwise completion would only start from the second letter.
      */
     override fun invokeAutoPopup(position: PsiElement, typeChar: Char): Boolean {
         if (typeChar != '@') return false
@@ -55,7 +56,7 @@ class DirectiveCompletionContributor : CompletionContributor() {
         return isInDirectiveArea(file.text, position.textRange.endOffset)
     }
 
-    /** Zda slovo, které uživatel právě píše, začíná zavináčem. */
+    /** Whether the word being typed starts with an at sign. */
     private fun startsWithAtSign(text: String, offset: Int): Boolean {
         var i = offset.coerceIn(0, text.length)
         while (i > 0 && text[i - 1].isLetter()) i--
@@ -63,8 +64,8 @@ class DirectiveCompletionContributor : CompletionContributor() {
     }
 
     /**
-     * Direktivy jsou jen v hlavičce souboru. Pozice se posuzuje podle toho, zda před
-     * kurzorem začalo tělo dokumentu — po prvním tagu nebo DOCTYPE už direktiva být nemůže.
+     * Directives live only in the file header. The position is judged by whether the document
+     * body has already started: after the first tag or DOCTYPE there can be no directive.
      */
     private fun isInDirectiveArea(text: String, offset: Int): Boolean {
         val before = text.take(offset)

@@ -1,8 +1,8 @@
 namespace DotVVM.LanguageServer.Model;
 
 /// <summary>
-/// Jeden záznam z config.markup.controls. Buď registrace celého namespace
-/// (Namespace + Assembly), nebo jedné markup kontrolky (TagName + Src).
+/// A single entry from config.markup.controls: either a whole namespace registration
+/// (Namespace + Assembly) or one markup control (TagName + Src).
 /// </summary>
 public record ControlRegistration(
     string TagPrefix,

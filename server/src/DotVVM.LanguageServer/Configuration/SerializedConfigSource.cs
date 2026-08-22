@@ -4,8 +4,8 @@ using DotVVM.LanguageServer.Model;
 namespace DotVVM.LanguageServer.Configuration;
 
 /// <summary>
-/// Stupeň 2: čte dotvvm_serialized_config.json.tmp, který DotVVM zapisuje
-/// při startu aplikace v Debug režimu. Hledá se od zadaného adresáře nahoru.
+/// Tier 2: reads dotvvm_serialized_config.json.tmp, which DotVVM writes when the application
+/// starts in Debug mode. The search runs from the given directory upwards.
 /// </summary>
 public sealed class SerializedConfigSource : IConfigurationSource
 {
@@ -28,15 +28,15 @@ public sealed class SerializedConfigSource : IConfigurationSource
         }
         catch (JsonException)
         {
-            return null;      // poškozený soubor — chováme se, jako by neexistoval
+            return null;      // a corrupt file is treated as if it did not exist
         }
         catch (IOException)
         {
-            return null;      // právě se přepisuje
+            return null;      // it is being rewritten right now
         }
     }
 
-    /// <summary>Hledá soubor v adresáři a pak ve všech nadřazených.</summary>
+    /// <summary>Looks for the file in the directory and then in every parent.</summary>
     private static string? FindConfigFile(string startDir)
     {
         var dir = new DirectoryInfo(startDir);
@@ -85,9 +85,9 @@ public sealed class SerializedConfigSource : IConfigurationSource
     }
 
     /// <summary>
-    /// Mapuje plný název typu na seznam jeho vlastností. Sekce properties má tvar
-    /// { "Plny.Nazev.Typu": { "NazevVlastnosti": { "type": ... } } } — tedy vnořený
-    /// objekt na typ, nikoli plochý klíč "Typ.Vlastnost".
+    /// Maps a full type name to its properties. The properties section has the shape
+    /// { "Full.Type.Name": { "PropertyName": { "type": ... } } } — a nested object per type,
+    /// not a flat "Type.Property" key.
     /// </summary>
     private static Dictionary<string, List<string>> ParseProperties(JsonElement root)
     {

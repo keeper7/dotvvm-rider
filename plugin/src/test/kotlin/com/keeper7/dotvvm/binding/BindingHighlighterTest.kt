@@ -3,9 +3,8 @@ package com.keeper7.dotvvm.binding
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 /**
- * Dědí BasePlatformTestCase, protože TextAttributesKey.createTextAttributesKey
- * zapisuje do globálního registru platformy a v čistém JUnit testu bez
- * inicializované Application selže.
+ * Extends BasePlatformTestCase because TextAttributesKey.createTextAttributesKey writes to a
+ * global platform registry and fails in a plain JUnit test without an initialised Application.
  */
 class BindingHighlighterTest : BasePlatformTestCase() {
 

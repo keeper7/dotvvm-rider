@@ -17,11 +17,11 @@ class DirectiveErrorFilterTest : BasePlatformTestCase() {
             "Sample.dothtml",
             "@viewModel App.MyViewModel, App\n\n<!DOCTYPE html>\n<html><body></body></html>"
         )
-        assertEmpty("Zvýrazněné chyby: " + found.joinToString(), found)
+        assertEmpty("Highlighted errors: " + found.joinToString(), found)
     }
 
     fun testUnclosedTagIsStillHighlighted() {
-        // Filtr musí být úzký — skutečnou chybu v těle dokumentu potlačit nesmí
+        // The filter must be narrow: it must not suppress a real error in the document body
         val found = errors(
             "Broken.dothtml",
             "@viewModel App.Vm\n\n<!DOCTYPE html>\n<html><body></html>"
@@ -30,11 +30,11 @@ class DirectiveErrorFilterTest : BasePlatformTestCase() {
     }
 
     fun testDoctypeWithoutDirectiveIsUntouched() {
-        // Bez direktivy nemá filtr co řešit a chování se nesmí lišit od holého HTML
+        // With no directive the filter has nothing to do and behaviour must match plain HTML
         val found = errors(
             "Plain.dothtml",
             "<!DOCTYPE html>\n<html><body></body></html>"
         )
-        assertEmpty("Zvýrazněné chyby: " + found.joinToString(), found)
+        assertEmpty("Highlighted errors: " + found.joinToString(), found)
     }
 }

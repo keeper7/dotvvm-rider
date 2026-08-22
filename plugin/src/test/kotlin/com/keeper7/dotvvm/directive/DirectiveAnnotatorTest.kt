@@ -24,7 +24,7 @@ class DirectiveAnnotatorTest : BasePlatformTestCase() {
     }
 
     fun testTextInBodyIsNotHighlighted() {
-        // Zavináč v těle dokumentu není direktiva
+        // An at sign in the document body is not a directive
         val names = highlightedRanges(
             "<html><body>@viewModel App.Vm</body></html>", "DOTVVM_DIRECTIVE_NAME")
         assertEmpty(names)

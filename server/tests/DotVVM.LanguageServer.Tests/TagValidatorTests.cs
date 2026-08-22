@@ -65,15 +65,15 @@ public class TagValidatorTests
     [Fact]
     public void UnknownPrefixIsSilentWhenProjectPrefixesAreUnknown()
     {
-        // Stupeň 1 zná jen vestavěné kontrolky, takže o prefixu 'cc' nemůže nic tvrdit.
-        // Podtrhnout ho jako chybu by znamenalo obvinit uživatele z něčeho, co server neví.
+        // Tier 1 knows only the built-in controls, so it can claim nothing about the 'cc'
+        // prefix. Underlining it would blame the user for something the server does not know.
         Assert.Empty(TagValidator.Validate("<cc:Address />", Registry, knowsProjectPrefixes: false));
     }
 
     [Fact]
     public void UnknownTagInKnownPrefixIsStillReportedWhenProjectPrefixesAreUnknown()
     {
-        // Standardní kontrolky zná i stupeň 1, takže překlep v 'dot:' hlásit smí.
+        // Tier 1 knows the standard controls, so a typo in 'dot:' may still be reported.
         var issues = TagValidator.Validate("<dot:NoSuchControl />", Registry, knowsProjectPrefixes: false);
         Assert.Contains("NoSuchControl", Assert.Single(issues).Message);
     }
@@ -81,7 +81,7 @@ public class TagValidatorTests
     [Fact]
     public void EmptyRegistryReportsNothing()
     {
-        // bez znalosti projektu nesmí server zaplavit uživatele falešnými chybami
+        // without knowledge of the project the server must not flood the user with false errors
         Assert.Empty(TagValidator.Validate("<dot:Button />", ControlRegistry.Empty, knowsProjectPrefixes: true));
     }
 
