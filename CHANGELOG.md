@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Completion of a control's properties inside its tag, with the value it takes: a property that
+  accepts nothing but a binding is inserted as `Name="{value: }"`, anything else as `Name=""`.
+  Required properties come first, then the control's own, then the attached ones. A property
+  written as a child element is not offered as an attribute, and one already on the tag is not
+  offered twice.
+- Completion of attached properties - `Validation.Enabled`, `Validator.Value` and their kind -
+  on any element, plain HTML included.
 - Hover reports the properties of the project's own controls. The assembly source now reads the
   control types themselves, not merely their registrations, and a markup control is connected to
   its code-behind class through the `@baseType` directive - which is where its properties live,
@@ -16,6 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Completion no longer offers tag prefixes in the middle of text or inside an attribute value.
+  It used to fall back to them whenever it could not find a tag on the caret's own line, which
+  also meant it saw nothing at all in a tag spanning several lines - a third of them in a real
+  project.
+- Hover no longer lists the properties that cannot be written: `ClientID` and the capability
+  containers such as `HtmlCapability`. Measured over the framework's controls, 95 of 614.
 - Hover no longer calls every control it does not know a markup control. It now says which of
   the three it actually is - an unregistered prefix, a control missing from the registry, or a
   markup control whose `@baseType` class was not found - matching what the squiggle under the
@@ -46,7 +59,7 @@ of HTML, so all HTML, CSS and JavaScript support keeps working unchanged.
 
 **Project knowledge (language server)**
 - Validation of tags against the registered controls
-- Completion of controls and their properties
+- Completion of control prefixes and tags
 - Navigation to the view model from the `@viewModel` directive, even when the file name
   does not match the view name
 - Documentation on hover

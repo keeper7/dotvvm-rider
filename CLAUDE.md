@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (81; the server has 97 of its own)
+./gradlew test                           # All tests (81; the server has 134 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -167,6 +167,27 @@ paints from `SyntaxHighlighter`, which runs a lexer of its own. With only the fi
 is right while the closing quote and everything after it lose their attribute colouring — a
 mismatch no PSI dump reveals, because the PSI is correct.
 
+## Completion
+
+`CompletionContextScanner` walks the text **forward** as a state machine instead of searching
+back from the caret. Two reasons, both fatal to the simpler version: a third of the prefixed
+tags in a real project span several lines, and the tag being typed has no closing `>` yet — so
+`EndOfTag` returning "not closed" and the caller treating that as *the caret is inside* is load
+bearing, not a detail.
+
+A property's name alone is not enough to offer it. Measured over the framework's controls: of
+614 properties, 50 are `MappingMode.Exclude`, 45 are capability containers, and 44 are written
+as a **child element**. `ControlProperty` therefore carries `Usage` and `Value`, filled by the
+probe from `MarkupOptions` and by tier 2 from `mappingMode`/`onlyBindings`/`onlyHardcoded`.
+
+`ControlCompletion` decides *what* may be written and stays free of protocol types, the same
+split as `ControlHoverText`. Snippets are used only when `capability.CompletionItem.SnippetSupport`
+says so — otherwise `$0` would be inserted literally.
+
+`MarkupControlResolver` rebuilds the registry, so anything it does not touch must be passed
+through explicitly. Attached properties were lost exactly that way, and no unit test saw it:
+only driving the whole chain over a real project showed a registry with none of them left.
+
 ## Testing
 
 JUnit 4 runner, two styles side by side:
@@ -202,6 +223,11 @@ The probe fails on real projects unless all of these hold — each cost a debugg
 - **Scan the registered assemblies, not just the project's.** `dot:Repeater` lives in
   `DotVVM.Framework`; without them tier 3 would know every standard control's *name* and none of
   its properties.
+- **Attached properties are found by `AttachedPropertyAttribute` on the static field, nothing
+  else.** Measured on 4.3.17: the marker yields exactly the 26 the framework itself serializes as
+  `isAttached`, while "no backing `PropertyInfo`" yields 54 (dragging in the `Internal.*`
+  plumbing) and "declared outside a control" yields 38 while losing `Validator.*`, written 503
+  times in a real project.
 
 The `properties` section of `dotvvm_serialized_config.json.tmp` is nested (`Type → Property`),
 never the flat `"Type.Property"` key it looks like it might be.
