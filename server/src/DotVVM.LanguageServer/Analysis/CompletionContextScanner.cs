@@ -118,10 +118,11 @@ public static class CompletionContextScanner
 
             var attribute = text[attributeStart..i];
 
-            // The name the caret is inside is being replaced, not written. Sitting exactly at
-            // its first character does not count: there the caret is in front of a finished
-            // attribute, about to write a new one.
-            var beingEdited = offset > attributeStart && offset <= i;
+            // An attribute the caret stands on is what completion replaces, so it counts as
+            // neither written nor absent. The first character is included: the editor replaces
+            // the whole name from there too, which is how picking one over |Text="x" used to
+            // leave the old ="x" behind.
+            var beingEdited = offset >= attributeStart && offset <= i;
 
             var j = i;
             while (j < text.Length && char.IsWhiteSpace(text[j])) j++;

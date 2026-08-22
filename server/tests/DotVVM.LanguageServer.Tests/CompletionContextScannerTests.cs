@@ -74,19 +74,20 @@ public class CompletionContextScannerTests
 
     /// <summary>
     /// An attribute counts as written wherever it sits on the tag. Collecting only what precedes
-    /// the caret meant that stepping in front of Text offered Text again.
+    /// the caret meant that Click was offered from in front of it and not from behind it.
+    /// The one the caret is on is the exception: it is what completion replaces.
     /// </summary>
     [Fact]
     public void ReportsTheAttributesWrittenAfterTheCaretToo()
     {
         var context = At("<dot:Button |Text=\"x\" Click=\"y\" />");
-        Assert.Equal(new[] { "Text", "Click" }, context.WrittenAttributes);
+        Assert.Equal(new[] { "Click" }, context.WrittenAttributes);
     }
 
     [Fact]
     public void ReportsTheAttributesOnBothSidesOfTheCaret()
     {
-        var context = At("<dot:Button Text=\"x\" |Click=\"y\" />");
+        var context = At("<dot:Button Text=\"x\" Click=\"y\" |Enabled=\"z\" />");
         Assert.Equal(new[] { "Text", "Click" }, context.WrittenAttributes);
     }
 
@@ -133,6 +134,10 @@ public class CompletionContextScannerTests
     {
         Assert.True(At("<dot:Button Enab|led=\"\" />").EditedAttributeHasValue);
         Assert.True(At("<dot:Button Enab|led = \"x\" />").EditedAttributeHasValue);
+
+        // The caret at the first character still sits on that attribute, and completion replaces
+        // it from there just the same
+        Assert.True(At("<dot:Button |Text=\"asdf\" />").EditedAttributeHasValue);
     }
 
     [Fact]
@@ -144,8 +149,20 @@ public class CompletionContextScannerTests
     [Fact]
     public void ReportsNoValueWhenNoAttributeIsBeingEdited()
     {
-        Assert.False(At("<dot:Button |Text=\"x\" />").EditedAttributeHasValue);
         Assert.False(At("<dot:Button Text=\"x\" |/>").EditedAttributeHasValue);
+        Assert.False(At("<dot:Button Text=\"x\" | Click=\"y\" />").EditedAttributeHasValue);
+    }
+
+    /// <summary>
+    /// Standing on an attribute means replacing it, so it is offered back - unlike the others on
+    /// the tag, which are already spoken for.
+    /// </summary>
+    [Fact]
+    public void OffersBackTheAttributeTheCaretStandsOn()
+    {
+        Assert.DoesNotContain("Text", At("<dot:Button |Text=\"x\" />").WrittenAttributes!);
+        Assert.DoesNotContain("Text", At("<dot:Button Te|xt=\"x\" />").WrittenAttributes!);
+        Assert.Contains("Text", At("<dot:Button Text=\"x\" |/>").WrittenAttributes!);
     }
 
     [Fact]
