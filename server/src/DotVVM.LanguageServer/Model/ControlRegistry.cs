@@ -8,13 +8,16 @@ public sealed class ControlRegistry
 {
     private readonly IReadOnlyList<ControlRegistration> _registrations;
     private readonly IReadOnlyList<ControlInfo> _controls;
+    private readonly IReadOnlyList<ControlProperty> _attached;
 
     public ControlRegistry(
         IEnumerable<ControlRegistration> registrations,
-        IEnumerable<ControlInfo> controls)
+        IEnumerable<ControlInfo> controls,
+        IEnumerable<ControlProperty>? attachedProperties = null)
     {
         _registrations = registrations.ToList();
         _controls = controls.ToList();
+        _attached = attachedProperties?.ToList() ?? new List<ControlProperty>();
     }
 
     public static ControlRegistry Empty { get; } =
@@ -23,6 +26,12 @@ public sealed class ControlRegistry
     public IReadOnlyList<ControlRegistration> Registrations => _registrations;
 
     public IReadOnlyList<ControlInfo> Controls => _controls;
+
+    /// <summary>
+    /// Properties written as Owner.Name on any element — Validation.Enabled and its kind. They
+    /// belong to no control, so they cannot live in ControlInfo.
+    /// </summary>
+    public IReadOnlyList<ControlProperty> AttachedProperties => _attached;
 
     public IReadOnlyCollection<string> AllPrefixes =>
         _registrations.Select(r => r.TagPrefix).Distinct().ToList();
@@ -90,5 +99,8 @@ public sealed class ControlRegistry
         new(_registrations.Concat(other._registrations).Distinct(),
             other._controls.Concat(_controls)
                  .GroupBy(c => c.FullTypeName, StringComparer.Ordinal)
+                 .Select(g => g.First()),
+            other._attached.Concat(_attached)
+                 .GroupBy(p => p.Name, StringComparer.Ordinal)
                  .Select(g => g.First()));
 }

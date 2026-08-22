@@ -111,7 +111,10 @@ public static class Program
             TagName: c.TagName,
             Src: c.Src)).ToList();
 
-        return new ProbeResult(registrations, ExtractControls(AssembliesToScan(config, assembly)));
+        var assemblies = AssembliesToScan(config, assembly).ToList();
+
+        return new ProbeResult(
+            registrations, ExtractControls(assemblies), ExtractAttachedProperties(assemblies));
     }
 
     /// <summary>
@@ -189,6 +192,47 @@ public static class Program
     }
 
     /// <summary>
+    /// Properties written as Owner.Name on any element. DotVVM marks them with
+    /// AttachedPropertyAttribute on the static field, and that marker is the only reliable sign:
+    /// measured on DotVVM 4.3.17 it yields exactly the 26 the framework itself serializes as
+    /// attached, while "no backing PropertyInfo" yields 54 (dragging in the Internal.* plumbing)
+    /// and "declared outside a control" yields 38 while losing Validator.*, used 503 times in a
+    /// real project.
+    /// </summary>
+    private static List<ProbeProperty> ExtractAttachedProperties(IEnumerable<Assembly> assemblies)
+    {
+        var result = new List<ProbeProperty>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var type in assemblies.SelectMany(GetLoadableTypes))
+        {
+            if (type.IsGenericTypeDefinition) continue;
+
+            var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static)
+                .Where(f => typeof(DotvvmProperty).IsAssignableFrom(f.FieldType) &&
+                            f.GetCustomAttribute<AttachedPropertyAttribute>() is not null)
+                .ToList();
+
+            if (fields.Count == 0) continue;
+            if (!RunConstructorChain(type)) continue;
+
+            foreach (var field in fields)
+            {
+                if (field.GetValue(null) is not DotvvmProperty property) continue;
+                if (!IsWritableInMarkup(property)) continue;
+
+                var described = Describe(property) with
+                {
+                    Name = $"{property.DeclaringType.Name}.{property.Name}"
+                };
+                if (seen.Add(described.Name)) result.Add(described);
+            }
+        }
+
+        return result.OrderBy(p => p.Name, StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>
     /// Whether the property can appear in markup at all. Measured over the framework's controls:
     /// of 614 properties, 50 are MappingMode.Exclude (ClientID and friends) and 45 are capability
     /// containers (HtmlCapability) that hold other properties rather than taking a value.
@@ -252,4 +296,7 @@ public record ProbeControl(
     string FullTypeName, string? BaseType, string? DefaultContentProperty,
     List<ProbeProperty> Properties);
 
-public record ProbeResult(List<ProbeRegistration> Registrations, List<ProbeControl> Controls);
+public record ProbeResult(
+    List<ProbeRegistration> Registrations,
+    List<ProbeControl> Controls,
+    List<ProbeProperty> AttachedProperties);

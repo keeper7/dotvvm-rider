@@ -53,8 +53,8 @@ public sealed class SerializedConfigSource : IConfigurationSource
     {
         var registrations = ParseRegistrations(root);
         var properties = ParseProperties(root);
-        var controls = ParseControls(root, properties);
-        return new ControlRegistry(registrations, controls);
+        var controls = ParseControls(root, properties.Own);
+        return new ControlRegistry(registrations, controls, properties.Attached);
     }
 
     private static List<ControlRegistration> ParseRegistrations(JsonElement root)
@@ -90,30 +90,52 @@ public sealed class SerializedConfigSource : IConfigurationSource
     /// object per type, not a flat "Type.Property" key. Metadata is written only when it differs
     /// from the default, so an absent mappingMode means Attribute.
     /// </summary>
-    private static Dictionary<string, List<ControlProperty>> ParseProperties(JsonElement root)
+    private static (Dictionary<string, List<ControlProperty>> Own, List<ControlProperty> Attached)
+        ParseProperties(JsonElement root)
     {
         var map = new Dictionary<string, List<ControlProperty>>(StringComparer.Ordinal);
+        var attached = new List<ControlProperty>();
 
         if (!root.TryGetProperty("properties", out var properties) ||
             properties.ValueKind != JsonValueKind.Object)
         {
-            return map;
+            return (map, attached);
         }
 
         foreach (var owner in properties.EnumerateObject())
         {
             if (owner.Value.ValueKind != JsonValueKind.Object) continue;
 
-            // Exclude means the property is never written in markup; drop it here so no later
-            // stage has to know about it. Measured: 50 of the framework's 614.
-            var parsed = owner.Value.EnumerateObject()
-                .Where(p => GetString(p.Value, "mappingMode") != "Exclude")
-                .Select(p => ReadProperty(p.Name, p.Value))
-                .ToList();
+            var own = new List<ControlProperty>();
 
-            if (parsed.Count > 0) map[owner.Name] = parsed;
+            foreach (var property in owner.Value.EnumerateObject())
+            {
+                // Exclude means the property is never written in markup; drop it here so no
+                // later stage has to know about it. Measured: 50 of the framework's 614.
+                if (GetString(property.Value, "mappingMode") == "Exclude") continue;
+
+                // An attached property is written as Owner.Name on any element, so it belongs
+                // to no control - not even to the type that declares it.
+                if (Flag(property.Value, "isAttached"))
+                {
+                    attached.Add(ReadProperty(
+                        $"{LastSegment(owner.Name)}.{property.Name}", property.Value));
+                    continue;
+                }
+
+                own.Add(ReadProperty(property.Name, property.Value));
+            }
+
+            if (own.Count > 0) map[owner.Name] = own;
         }
-        return map;
+        return (map, attached);
+    }
+
+    private static string LastSegment(string typeName)
+    {
+        var withoutAssembly = typeName.Split(',')[0];
+        var lastDot = withoutAssembly.LastIndexOf('.');
+        return lastDot < 0 ? withoutAssembly : withoutAssembly[(lastDot + 1)..];
     }
 
     private static ControlProperty ReadProperty(string name, JsonElement value) =>

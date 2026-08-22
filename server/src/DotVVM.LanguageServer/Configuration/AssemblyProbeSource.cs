@@ -173,7 +173,10 @@ public sealed class AssemblyProbeSource : IConfigurationSource
                 TagName: Str(item, "TagName"),
                 Src: Str(item, "Src"))).ToList();
 
-            return new ControlRegistry(registrations, ParseControls(doc.RootElement));
+            return new ControlRegistry(
+                registrations,
+                ParseControls(doc.RootElement),
+                ReadProperties(doc.RootElement, "AttachedProperties"));
         }
         catch (JsonException)
         {
@@ -204,17 +207,17 @@ public sealed class AssemblyProbeSource : IConfigurationSource
                 FullTypeName: fullTypeName,
                 BaseType: Str(item, "BaseType"),
                 DefaultContentProperty: Str(item, "DefaultContentProperty"),
-                Properties: ReadProperties(item)));
+                Properties: ReadProperties(item, "Properties")));
         }
 
         return result;
     }
 
-    private static List<ControlProperty> ReadProperties(JsonElement element)
+    private static List<ControlProperty> ReadProperties(JsonElement element, string key)
     {
         var result = new List<ControlProperty>();
 
-        if (!element.TryGetProperty("Properties", out var array) ||
+        if (!element.TryGetProperty(key, out var array) ||
             array.ValueKind != JsonValueKind.Array)
         {
             return result;
