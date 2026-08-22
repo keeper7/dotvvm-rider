@@ -5,7 +5,7 @@ import com.intellij.psi.FileViewProvider
 import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.html.HtmlFileImpl
 import com.intellij.psi.tree.IFileElementType
-import com.keeper7.dotvvm.binding.QuotedBindingLexer
+import com.keeper7.dotvvm.binding.DotvvmMaskingLexer
 
 /**
  * Registering [HTMLParserDefinition] directly for DotVVM is not enough: it builds the PSI file
@@ -24,7 +24,7 @@ class DotvvmParserDefinition : HTMLParserDefinition() {
      * A binding expression may contain quotes; the HTML lexer would end the attribute value there.
      */
     override fun createLexer(project: com.intellij.openapi.project.Project?): com.intellij.lexer.Lexer =
-        QuotedBindingLexer(super.createLexer(project))
+        DotvvmMaskingLexer(super.createLexer(project))
 
     companion object {
         @JvmField
