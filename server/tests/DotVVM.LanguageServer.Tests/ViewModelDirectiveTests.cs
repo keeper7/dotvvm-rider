@@ -62,4 +62,26 @@ public class ViewModelDirectiveTests
         Assert.NotNull(r);
         Assert.Equal("App.ListViewModel<App.Item>", r!.TypeName);
     }
+
+    [Fact]
+    public void SkipsByteOrderMark()
+    {
+        // Every real .dothtml carries one, and without this the directive is never found:
+        // U+FEFF is not whitespace, so TrimStart() leaves it in front of the '@'.
+        var reference = ViewModelDirective.Parse("\uFEFF@viewModel App.Vm, App\n<div />");
+
+        Assert.NotNull(reference);
+        Assert.Equal("App.Vm", reference!.TypeName);
+    }
+
+    [Fact]
+    public void CountsTheByteOrderMarkIntoTheCharacterOffset()
+    {
+        // The mark is a character of the document, so the position the client is given must
+        // include it — otherwise go-to-definition underlines one character too far left.
+        var reference = ViewModelDirective.Parse("\uFEFF@viewModel App.Vm, App\n<div />");
+
+        Assert.Equal(0, reference!.Line);
+        Assert.Equal("\uFEFF@viewModel ".Length, reference.Character);
+    }
 }
