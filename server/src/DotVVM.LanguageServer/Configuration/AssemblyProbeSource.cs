@@ -23,7 +23,7 @@ public sealed class AssemblyProbeSource : IConfigurationSource
         _timeout = timeout ?? TimeSpan.FromSeconds(30);
     }
 
-    public string Name => "plná";
+    public string Name => "assembly";
 
     public bool KnowsProjectPrefixes => true;
 
@@ -153,7 +153,7 @@ public sealed class AssemblyProbeSource : IConfigurationSource
             if (process.ExitCode != 0)
             {
                 var stderr = await process.StandardError.ReadToEndAsync(ct);
-                await Console.Error.WriteLineAsync($"[dotvvm-ls] probe skončil s chybou: {stderr}");
+                await Console.Error.WriteLineAsync($"[dotvvm-ls] probe failed: {stderr}");
                 return null;
             }
             return stdout;

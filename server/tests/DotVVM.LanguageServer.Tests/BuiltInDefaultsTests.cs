@@ -19,7 +19,7 @@ public class BuiltInDefaultsTests
         var registry = await new BuiltInDefaults().LoadAsync("/nonexistent", default);
         foreach (var tag in new[] { "Button", "TextBox", "Repeater", "GridView", "RouteLink" })
         {
-            Assert.True(registry!.IsKnownTag("dot", tag), $"chybí kontrolka {tag}");
+            Assert.True(registry!.IsKnownTag("dot", tag), $"missing control {tag}");
         }
     }
 

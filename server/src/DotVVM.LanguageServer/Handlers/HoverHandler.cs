@@ -57,7 +57,7 @@ public class HoverHandler : IHoverHandler
             if (control.DefaultContentProperty is not null)
             {
                 lines.Add("");
-                lines.Add($"Výchozí vlastnost obsahu: `{control.DefaultContentProperty}`");
+                lines.Add($"Default content property: `{control.DefaultContentProperty}`");
             }
 
             if (control.Properties.Count > 0)
@@ -70,7 +70,7 @@ public class HoverHandler : IHoverHandler
         else
         {
             lines.Add("");
-            lines.Add("_Markup kontrolka — vlastnosti nejsou známy._");
+            lines.Add("_Markup control \u2014 properties are not known._");
         }
 
         return new Hover

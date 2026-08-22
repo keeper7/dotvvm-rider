@@ -7,6 +7,18 @@
     for .dothtml, .dotmaster and .dotcontrol files.
   ]]></description>
 
+  <!-- Shown by Marketplace for this release; the details live in CHANGELOG.md -->
+  <change-notes><![CDATA[
+    <h3>0.1.0</h3>
+    <ul>
+      <li>Highlighting for binding expressions, including nested braces and quotes inside the expression</li>
+      <li>Directives: highlighting, name completion, navigation to the master page</li>
+      <li>Tag validation, control completion and navigation to the view model from the directive</li>
+      <li>A status bar indicator naming what the language server knows about the project</li>
+      <li>Suppression of messages the platform reports only because it does not know DotVVM</li>
+    </ul>
+  ]]></change-notes>
+
   <depends>com.intellij.modules.xml</depends>
   <!-- LSP API není v Community edici; bez tohoto modulu se plugin nenačte -->
   <depends>com.intellij.modules.lsp</depends>

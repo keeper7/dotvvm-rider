@@ -8,7 +8,7 @@ namespace DotVVM.LanguageServer.Configuration;
 /// </summary>
 public sealed class BuiltInDefaults : IConfigurationSource
 {
-    public string Name => "základní";
+    public string Name => "built-in";
 
     public bool KnowsProjectPrefixes => false;
 

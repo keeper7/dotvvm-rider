@@ -22,12 +22,12 @@ class DotvvmStatusBarWidget(project: Project)
     override fun getWidgetState(file: VirtualFile?): WidgetState {
         if (file == null || !isDotvvmFile(file)) return WidgetState.HIDDEN
 
-        val tier = project.getUserData(CONFIGURATION_TIER) ?: "základní"
+        val tier = project.getUserData(CONFIGURATION_TIER) ?: "built-in"
         val tooltip = when (tier) {
-            "plná"     -> "Kontrolky načteny ze sestavené assembly projektu"
-            "config"   -> "Kontrolky načteny z konfigurace posledního spuštění aplikace"
-            "základní" -> "Známy jsou jen standardní kontrolky. Sestav projekt pro plnou podporu."
-            else       -> "Konfigurace DotVVM není k dispozici"
+            "assembly" -> "Controls read from the project's compiled assembly"
+            "config"   -> "Controls read from the configuration of the last application run"
+            "built-in" -> "Only the standard controls are known. Build the project for full support."
+            else       -> "No DotVVM configuration is available"
         }
         return WidgetState(tooltip, "DotVVM: $tier", true)
     }
