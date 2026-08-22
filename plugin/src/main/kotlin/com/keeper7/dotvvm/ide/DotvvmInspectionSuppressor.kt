@@ -10,8 +10,8 @@ import com.intellij.psi.xml.XmlTag
 /**
  * Silences the platform inspections that cannot know anything about DotVVM.
  *
- * A control prefix is not declared in the file with `xmlns:` but registered
- * v `DotvvmStartup.cs`, a properties jako `Visible` nebo `Class-required` jsou DotVVM
+ * A control prefix is not declared in the file with `xmlns:` but registered in
+ * `DotvvmStartup.cs`, and properties such as `Visible` or `Class-required` are DotVVM
  * extensions of HTML elements. Both ask the file, so they would underline correct code. What
  * really exists in the project is known only to the LSP server, which reports it itself.
  */
