@@ -1,0 +1,99 @@
+using DotVVM.LanguageServer.Configuration;
+using DotVVM.LanguageServer.Model;
+using Xunit;
+
+namespace DotVVM.LanguageServer.Tests;
+
+public class MarkupControlResolverTests
+{
+    private static ControlRegistry RegistryWithMarkupControl() => new(
+        new[] { new ControlRegistration("cc", null, null, "Widget", "Controls/Widget.dotcontrol") },
+        new[] { new ControlInfo("App.Controls.Widget", "DotvvmMarkupControl", null,
+                                new[] { "Data", "Visible" }) });
+
+    private static Func<string, string?> FileAt(string path, string content) =>
+        candidate => candidate.Replace('\\', '/') == path ? content : null;
+
+    [Fact]
+    public void ResolvesPropertiesThroughTheBaseTypeDirective()
+    {
+        var resolved = MarkupControlResolver.Resolve(
+            RegistryWithMarkupControl(),
+            projectRoot: "/project",
+            readFile: FileAt("/project/Controls/Widget.dotcontrol",
+                "@viewModel System.Object\n@baseType App.Controls.Widget, App\n<div />"));
+
+        var control = resolved.GetControl("cc", "Widget");
+        Assert.NotNull(control);
+        Assert.Contains("Data", control!.Properties);
+    }
+
+    [Fact]
+    public void LeavesRegistryAloneWhenTheFileIsMissing()
+    {
+        // An unbuilt project or a renamed file must not bring the whole registry down
+        var resolved = MarkupControlResolver.Resolve(
+            RegistryWithMarkupControl(), "/project", readFile: _ => null);
+
+        Assert.Null(resolved.GetControl("cc", "Widget"));
+        Assert.True(resolved.IsKnownTag("cc", "Widget"));    // the registration stays valid
+    }
+
+    [Fact]
+    public void LeavesRegistryAloneWhenTheDirectiveIsMissing()
+    {
+        var resolved = MarkupControlResolver.Resolve(
+            RegistryWithMarkupControl(), "/project",
+            readFile: _ => "@viewModel System.Object\n<div />");
+
+        Assert.Null(resolved.GetControl("cc", "Widget"));
+    }
+
+    /// <summary>
+    /// The base type may well name a class no tier could see - an assembly that failed to load,
+    /// or a project that has never been built. The registration must survive that.
+    /// </summary>
+    [Fact]
+    public void KeepsTheRegistrationWhenNoTypeMatchesTheBaseType()
+    {
+        var registry = new ControlRegistry(
+            new[] { new ControlRegistration("cc", null, null, "Widget", "Controls/Widget.dotcontrol") },
+            Array.Empty<ControlInfo>());
+
+        var resolved = MarkupControlResolver.Resolve(
+            registry, "/project",
+            readFile: _ => "@baseType App.Controls.Widget, App\n<div />");
+
+        Assert.Null(resolved.GetControl("cc", "Widget"));
+        Assert.True(resolved.IsKnownTag("cc", "Widget"));
+    }
+
+    /// <summary>
+    /// Src uses forward slashes even on Windows, because that is how it is written in the
+    /// configuration. Path.Combine must not be handed it as an absolute path.
+    /// </summary>
+    [Fact]
+    public void ReadsTheFileRelativeToTheProjectRoot()
+    {
+        string? asked = null;
+
+        MarkupControlResolver.Resolve(
+            RegistryWithMarkupControl(), "/project",
+            readFile: path => { asked = path; return null; });
+
+        Assert.Equal("/project/Controls/Widget.dotcontrol", asked?.Replace('\\', '/'));
+    }
+
+    [Fact]
+    public void LeavesTypedRegistrationsUntouched()
+    {
+        var registry = new ControlRegistry(
+            new[] { new ControlRegistration("dot", "DotVVM.Framework.Controls", "DotVVM.Framework", null, null) },
+            new[] { new ControlInfo("DotVVM.Framework.Controls.Repeater", null, null, new[] { "Visible" }) });
+
+        var resolved = MarkupControlResolver.Resolve(
+            registry, "/project", readFile: _ => throw new InvalidOperationException("must not read"));
+
+        Assert.NotNull(resolved.GetControl("dot", "Repeater"));
+    }
+}

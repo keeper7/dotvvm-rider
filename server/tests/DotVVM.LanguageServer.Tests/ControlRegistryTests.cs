@@ -79,4 +79,28 @@ public class ControlRegistryTests
     {
         Assert.Equal(new[] { "cc", "dot" }, BuildRegistry().AllPrefixes.OrderBy(p => p).ToArray());
     }
+
+    /// <summary>
+    /// A markup control has no namespace, so only the resolved base type can lead to its
+    /// properties. Without BaseTypeName the lookup must stay silent rather than guess by name.
+    /// </summary>
+    [Fact]
+    public void FindsAMarkupControlThroughItsResolvedBaseType()
+    {
+        var controls = new[]
+        {
+            new ControlInfo("App.Controls.Widget", null, null, new[] { "Data" })
+        };
+
+        var unresolved = new ControlRegistry(
+            new[] { new ControlRegistration("cc", null, null, "Widget", "Controls/Widget.dotcontrol") },
+            controls);
+        Assert.Null(unresolved.GetControl("cc", "Widget"));
+
+        var resolved = new ControlRegistry(
+            new[] { new ControlRegistration("cc", null, null, "Widget", "Controls/Widget.dotcontrol",
+                                            BaseTypeName: "App.Controls.Widget") },
+            controls);
+        Assert.Equal("App.Controls.Widget", resolved.GetControl("cc", "Widget")?.FullTypeName);
+    }
 }

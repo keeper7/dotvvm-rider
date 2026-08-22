@@ -100,7 +100,7 @@ public sealed class AssemblyProbeSource : IConfigurationSource
     /// <summary>Finds the newest compiled assembly of the project under bin/.</summary>
     private static string? FindProjectAssembly(string projectDir)
     {
-        var root = FindProjectRoot(projectDir);
+        var root = ProjectRoot.Find(projectDir);
         if (root is null) return null;
 
         var projectName = Path.GetFileNameWithoutExtension(
@@ -114,17 +114,6 @@ public sealed class AssemblyProbeSource : IConfigurationSource
             .EnumerateFiles(bin, projectName + ".dll", SearchOption.AllDirectories)
             .OrderByDescending(File.GetLastWriteTimeUtc)
             .FirstOrDefault();
-    }
-
-    private static string? FindProjectRoot(string startDir)
-    {
-        var dir = new DirectoryInfo(startDir);
-        while (dir is not null)
-        {
-            if (dir.EnumerateFiles("*.csproj").Any()) return dir.FullName;
-            dir = dir.Parent;
-        }
-        return null;
     }
 
     private async Task<string?> RunProbeAsync(

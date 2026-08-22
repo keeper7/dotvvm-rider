@@ -20,6 +20,10 @@ public sealed class ControlRegistry
     public static ControlRegistry Empty { get; } =
         new(Array.Empty<ControlRegistration>(), Array.Empty<ControlInfo>());
 
+    public IReadOnlyList<ControlRegistration> Registrations => _registrations;
+
+    public IReadOnlyList<ControlInfo> Controls => _controls;
+
     public IReadOnlyCollection<string> AllPrefixes =>
         _registrations.Select(r => r.TagPrefix).Distinct().ToList();
 
@@ -55,6 +59,18 @@ public sealed class ControlRegistry
 
     public ControlInfo? GetControl(string prefix, string tagName)
     {
+        // A markup control is registered by file, so the namespace lookup below never finds it.
+        // Its properties belong to the class named by @baseType, resolved by MarkupControlResolver.
+        var markup = _registrations.FirstOrDefault(r =>
+            r.TagPrefix == prefix && r.IsMarkupControl && r.TagName == tagName
+            && r.BaseTypeName is not null);
+
+        if (markup is not null)
+        {
+            var byType = _controls.FirstOrDefault(c => c.FullTypeName == markup.BaseTypeName);
+            if (byType is not null) return byType;
+        }
+
         var namespaces = NamespacesFor(prefix).ToHashSet(StringComparer.Ordinal);
         return _controls.FirstOrDefault(c => namespaces.Contains(c.Namespace) && c.TagName == tagName);
     }
