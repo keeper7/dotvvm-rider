@@ -31,7 +31,7 @@ class DirectiveCompletionContributor : CompletionContributor() {
         for (name in DirectiveScanner.KNOWN_NAMES) {
             result.addElement(
                 LookupElementBuilder.create(name)
-                    .withTypeText("DotVVM direktiva", true)
+                    .withTypeText("DotVVM directive", true)
             )
         }
 

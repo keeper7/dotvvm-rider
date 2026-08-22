@@ -13,7 +13,7 @@ public class DothtmlScannerTests
         Assert.Equal("dot", tag.Prefix);
         Assert.Equal("Button", tag.TagName);
         Assert.Equal(0, tag.Line);
-        Assert.Equal(1, tag.Character);          // za znakem '<'
+        Assert.Equal(1, tag.Character);          // just past the '<'
         Assert.Equal("dot:Button".Length, tag.Length);
     }
 

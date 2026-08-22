@@ -37,7 +37,7 @@ public static class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"probe selhal: {ex.GetType().Name}: {ex.Message}");
+            Console.Error.WriteLine($"probe failed: {ex.GetType().Name}: {ex.Message}");
             return 1;
         }
     }
