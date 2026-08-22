@@ -14,5 +14,14 @@
     <span>{value: Format("}")}</span>
     <cc:MyControl Value="{value: Name}" />
     <div class="not-a-binding">{ this is not a binding }</div>
+
+    <%-- A whole element switched off. The tag inside must not be validated. --%>
+    <table>
+        <tr>
+            <th <%-- width="30%" --%>>{{resource: Labels.Save}}</th>
+            <th class="wide" <%-- Sortable="true"
+                                 Direction="Asc" --%> id="second">Second</th>
+        </tr>
+    </table>
 </body>
 </html>
