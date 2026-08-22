@@ -29,7 +29,7 @@ public class BuiltInDefaultsTests
         var registry = await new BuiltInDefaults().LoadAsync("/nonexistent", default);
         var button = registry!.GetControl("dot", "Button");
         Assert.NotNull(button);
-        Assert.Contains("Text", button!.Properties);
+        Assert.Contains(button!.Properties, p => p.Name == "Text");
     }
 
     [Fact]

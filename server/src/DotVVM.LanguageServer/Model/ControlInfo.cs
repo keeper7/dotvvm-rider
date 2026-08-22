@@ -5,7 +5,7 @@ public record ControlInfo(
     string FullTypeName,
     string? BaseType,
     string? DefaultContentProperty,
-    IReadOnlyList<string> Properties)
+    IReadOnlyList<ControlProperty> Properties)
 {
     /// <summary>The tag name, that is the last segment of the full type name.</summary>
     public string TagName => FullTypeName[(FullTypeName.LastIndexOf('.') + 1)..];

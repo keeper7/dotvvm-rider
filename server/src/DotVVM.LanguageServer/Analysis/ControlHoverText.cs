@@ -36,7 +36,7 @@ public static class ControlHoverText
         if (control.Properties.Count > 0)
         {
             text.Append("\n\nProperties: ").Append(string.Join(", ",
-                control.Properties.Take(MaxProperties).Select(p => $"`{p}`")));
+                control.Properties.Take(MaxProperties).Select(p => $"`{p.Name}`")));
 
             if (control.Properties.Count > MaxProperties)
             {

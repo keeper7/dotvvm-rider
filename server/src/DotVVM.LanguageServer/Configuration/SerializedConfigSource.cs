@@ -86,12 +86,13 @@ public sealed class SerializedConfigSource : IConfigurationSource
 
     /// <summary>
     /// Maps a full type name to its properties. The properties section has the shape
-    /// { "Full.Type.Name": { "PropertyName": { "type": ... } } } — a nested object per type,
-    /// not a flat "Type.Property" key.
+    /// { "Full.Type.Name": { "PropertyName": { "type": …, "mappingMode": … } } } — a nested
+    /// object per type, not a flat "Type.Property" key. Metadata is written only when it differs
+    /// from the default, so an absent mappingMode means Attribute.
     /// </summary>
-    private static Dictionary<string, List<string>> ParseProperties(JsonElement root)
+    private static Dictionary<string, List<ControlProperty>> ParseProperties(JsonElement root)
     {
-        var map = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var map = new Dictionary<string, List<ControlProperty>>(StringComparer.Ordinal);
 
         if (!root.TryGetProperty("properties", out var properties) ||
             properties.ValueKind != JsonValueKind.Object)
@@ -103,16 +104,39 @@ public sealed class SerializedConfigSource : IConfigurationSource
         {
             if (owner.Value.ValueKind != JsonValueKind.Object) continue;
 
-            var names = owner.Value.EnumerateObject().Select(p => p.Name).ToList();
-            if (names.Count == 0) continue;
+            // Exclude means the property is never written in markup; drop it here so no later
+            // stage has to know about it. Measured: 50 of the framework's 614.
+            var parsed = owner.Value.EnumerateObject()
+                .Where(p => GetString(p.Value, "mappingMode") != "Exclude")
+                .Select(p => ReadProperty(p.Name, p.Value))
+                .ToList();
 
-            map[owner.Name] = names;
+            if (parsed.Count > 0) map[owner.Name] = parsed;
         }
         return map;
     }
 
+    private static ControlProperty ReadProperty(string name, JsonElement value) =>
+        new(Name: name,
+            Usage: GetString(value, "mappingMode") switch
+            {
+                "InnerElement" => PropertyUsage.InnerElement,
+                "Both" => PropertyUsage.Both,
+                _ => PropertyUsage.Attribute,
+            },
+            Value: Flag(value, "onlyBindings") ? PropertyValue.BindingOnly
+                 : Flag(value, "onlyHardcoded") ? PropertyValue.HardCodedOnly
+                 : PropertyValue.Any,
+            Required: Flag(value, "required"),
+            TypeName: GetString(value, "type"));
+
+    private static bool Flag(JsonElement element, string name) =>
+        element.ValueKind == JsonValueKind.Object &&
+        element.TryGetProperty(name, out var value) &&
+        value.ValueKind == JsonValueKind.True;
+
     private static List<ControlInfo> ParseControls(
-        JsonElement root, Dictionary<string, List<string>> properties)
+        JsonElement root, Dictionary<string, List<ControlProperty>> properties)
     {
         var result = new List<ControlInfo>();
 
@@ -131,7 +155,7 @@ public sealed class SerializedConfigSource : IConfigurationSource
                 DefaultContentProperty: GetString(entry.Value, "defaultContentProperty"),
                 Properties: properties.TryGetValue(typeName, out var props)
                     ? props
-                    : Array.Empty<string>()));
+                    : Array.Empty<ControlProperty>()));
         }
         return result;
     }
