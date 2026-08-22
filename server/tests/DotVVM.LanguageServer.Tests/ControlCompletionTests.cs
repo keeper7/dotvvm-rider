@@ -57,6 +57,26 @@ public class ControlCompletionTests
         Assert.Equal("WrapperTagName=\"$0\"", item.InsertText);
     }
 
+    /// <summary>
+    /// When the caret renames an attribute that already carries a value, only the name may be
+    /// inserted - the value belongs to the user and stays where it is.
+    /// </summary>
+    [Fact]
+    public void InsertsOnlyTheNameWhenTheAttributeAlreadyHasAValue()
+    {
+        var context = new CompletionContext(
+            CompletionTarget.AttributeName, "dot", "Repeater", Array.Empty<string>(),
+            EditedAttributeHasValue: true);
+
+        var visible = ControlCompletion.Suggest(Registry(), context).Single(s => s.Label == "Visible");
+        Assert.Equal("Visible", visible.InsertText);
+        Assert.False(visible.IsSnippet);
+
+        // Not even for a binding-only property: its value is already written
+        var source = ControlCompletion.Suggest(Registry(), context).Single(s => s.Label == "DataSource");
+        Assert.Equal("DataSource", source.InsertText);
+    }
+
     [Fact]
     public void LeavesOutThePropertiesAlreadyWritten()
     {
