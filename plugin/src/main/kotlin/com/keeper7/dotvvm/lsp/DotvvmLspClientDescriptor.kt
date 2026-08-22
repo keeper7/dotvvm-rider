@@ -1,6 +1,8 @@
 package com.keeper7.dotvvm.lsp
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.configurations.PathEnvironmentVariableUtil
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.Lsp4jClient
@@ -11,6 +13,7 @@ import com.intellij.platform.lsp.api.customization.LspDocumentSymbolDisabled
 import com.intellij.platform.lsp.api.customization.LspFoldingRangeDisabled
 import com.intellij.platform.lsp.api.customization.LspFormattingDisabled
 import com.intellij.platform.lsp.api.customization.LspOnTypeFormattingDisabled
+import java.nio.file.Files
 import java.nio.file.Path
 
 /**
@@ -23,9 +26,28 @@ class DotvvmLspClientDescriptor(project: Project, private val serverDll: Path)
     override fun isSupportedFile(file: VirtualFile): Boolean = isDotvvmFile(file)
 
     override fun createCommandLine(): GeneralCommandLine =
-        GeneralCommandLine(ServerBinaryLocator.buildCommandLine(serverDll))
+        GeneralCommandLine(ServerBinaryLocator.buildCommandLine(serverDll, findDotnet()))
             .withWorkDirectory(project.basePath)
             .withCharset(Charsets.UTF_8)
+
+    /**
+     * Locates the .NET runtime. An IDE started from the Dock or a desktop launcher inherits a
+     * minimal PATH that holds no .NET installation, so a bare `dotnet` would fail there while
+     * working perfectly when the same IDE is started from a terminal — the server would simply
+     * never come up, with nothing to point at the cause.
+     */
+    private fun findDotnet(): String {
+        PathEnvironmentVariableUtil.findInPath(DOTNET)?.let { return it.absolutePath }
+
+        val searchPath = ServerBinaryLocator.dotnetSearchPath(
+            dotnetRoot = System.getenv("DOTNET_ROOT"),
+            userHome = System.getProperty("user.home"),
+        )
+        ServerBinaryLocator.findDotnet(searchPath, Files::isExecutable)?.let { return it.toString() }
+
+        LOG.warn("No .NET runtime found in PATH or in $searchPath; falling back to '$DOTNET'")
+        return DOTNET
+    }
 
     override fun createLsp4jClient(handler: LspServerNotificationsHandler): Lsp4jClient =
         DotvvmLsp4jClient(handler, project)
@@ -41,5 +63,10 @@ class DotvvmLspClientDescriptor(project: Project, private val serverDll: Path)
         override val onTypeFormattingCustomizer = LspOnTypeFormattingDisabled
         override val foldingRangeCustomizer = LspFoldingRangeDisabled
         override val documentSymbolCustomizer = LspDocumentSymbolDisabled
+    }
+
+    private companion object {
+        const val DOTNET = "dotnet"
+        val LOG = Logger.getInstance(DotvvmLspClientDescriptor::class.java)
     }
 }
