@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (81; the server has 134 of its own)
+./gradlew test                           # All tests (81; the server has 143 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -180,6 +180,16 @@ A property's name alone is not enough to offer it. Measured over the framework's
 as a **child element**. `ControlProperty` therefore carries `Usage` and `Value`, filled by the
 probe from `MarkupOptions` and by tier 2 from `mappingMode`/`onlyBindings`/`onlyHardcoded`.
 
+The caret **touching** an attribute's name means that attribute is being replaced — including
+at its first character, because the editor replaces the whole name from there too. One rule,
+two consequences: it is not counted among the written ones (so it is offered back), and only the
+name is inserted, leaving its value alone. Getting either half wrong is visible immediately:
+completing over `|Text="x"` produced `Enabled=""="x"`.
+
+The space is declared as a trigger character *and* `LspCompletionSupport.isTriggerCharacterRespected`
+is overridden — the platform asks before acting on one, and without the override the list opened
+only on the first letter or on Ctrl+Space.
+
 `ControlCompletion` decides *what* may be written and stays free of protocol types, the same
 split as `ControlHoverText`. Snippets are used only when `capability.CompletionItem.SnippetSupport`
 says so — otherwise `$0` would be inserted literally.
@@ -249,6 +259,9 @@ publishing to Marketplace.
 
 The `runRider` sandbox lives in `.intellijPlatform/sandbox/dotvvm-rider/IU-*/…_runRider/` —
 named after the compile platform (IU), not Rider, so `RD-*/` next to it is a stale leftover.
+Refreshing it needs `prepareSandbox_runRider`, not `prepareSandbox`: the latter fills the
+*default* sandbox and leaves the running one untouched. Either way the sandbox has to be
+restarted afterwards — overwriting the plugin underneath a running IDE shuts it down.
 
 Two related gotchas: Rider does not publish its test-framework as an artifact (it needs
 `TestFrameworkType.Bundled` — note the docs wrongly say `TestFrameworkType.Platform.Bundled`), and
