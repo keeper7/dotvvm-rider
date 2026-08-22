@@ -126,4 +126,13 @@ public class DirectiveCompletionTests
         // worse than silence
         Assert.Empty(DirectiveCompletion.Suggest(Registry, new DirectiveContext("masterPage", "")));
     }
+
+    [Fact]
+    public void SaysNothingForTheViewModuleDirective()
+    {
+        // @js names a resource registered in DotvvmStartup, not a file. Listing .js files off
+        // the disk offered things like `build-docker.js`, which no view could ever reference.
+        Assert.Empty(DirectiveCompletion.Suggest(
+            Registry, new DirectiveContext("js", ""), _ => new[] { "wwwroot/a.js" }));
+    }
 }
