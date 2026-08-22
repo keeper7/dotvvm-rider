@@ -16,18 +16,40 @@ public record DirectiveSuggestion(string Label, string? Detail = null, string? S
 /// </summary>
 public static class DirectiveCompletion
 {
+    /// <param name="files">
+    /// Looks a path up by extension - `.dotmaster` for a master page. Passed in rather than
+    /// read here, so this class stays free of the file system and its tests need no directories
+    /// on disk. Null when the project root is unknown, and then the path directives stay silent.
+    /// </param>
     public static IReadOnlyList<DirectiveSuggestion> Suggest(
-        ControlRegistry registry, DirectiveContext context) => context.Name switch
+        ControlRegistry registry,
+        DirectiveContext context,
+        Func<string, IReadOnlyList<string>>? files = null) => context.Name switch
     {
         "viewModel" => Types(registry.Types.ViewModels, "view model"),
         "baseType" => Types(registry.Controls.Select(c => c.FullTypeName), "control"),
         "import" or "resourceNamespace" => Namespaces(registry.Types.Namespaces),
+        "masterPage" => Paths(files, ".dotmaster"),
+        "js" => Paths(files, ".js"),
 
         // @service and @resourceType name any type of the project, which the registry does not
         // hold - it knows controls and view models, not the rest. Two occurrences in a real
         // project, so this is a decision, not an oversight.
         _ => Array.Empty<DirectiveSuggestion>(),
     };
+
+    /// <summary>
+    /// Paths sorted shallowest first, the same reasoning as for namespaces: the master page a
+    /// view inherits from usually sits near the top of the tree.
+    /// </summary>
+    private static IReadOnlyList<DirectiveSuggestion> Paths(
+        Func<string, IReadOnlyList<string>>? files, string extension) =>
+        files is null
+            ? Array.Empty<DirectiveSuggestion>()
+            : files(extension)
+                .Select(p => new DirectiveSuggestion(
+                    p, extension[1..], $"{p.Count(c => c == '/'):D3}{p}"))
+                .ToList();
 
     private static IReadOnlyList<DirectiveSuggestion> Types(
         IEnumerable<string> names, string detail) =>

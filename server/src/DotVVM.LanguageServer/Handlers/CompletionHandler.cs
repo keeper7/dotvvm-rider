@@ -56,8 +56,12 @@ public class CompletionHandler : ICompletionHandler
         if (directive.Name is not null)
         {
             var registry = (await _configuration.GetAsync(projectDir, ct)).Registry;
+            var root = ProjectRoot.Find(projectDir);
             return new CompletionList(
-                DirectiveCompletion.Suggest(registry, directive).Select(ToCompletionItem));
+                DirectiveCompletion
+                    .Suggest(registry, directive,
+                             root is null ? null : extension => ViewFiles.Find(root, extension))
+                    .Select(ToCompletionItem));
         }
 
         var context = CompletionContextScanner.Detect(

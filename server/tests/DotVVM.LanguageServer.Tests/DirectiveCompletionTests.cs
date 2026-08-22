@@ -87,4 +87,43 @@ public class DirectiveCompletionTests
         var items = DirectiveCompletion.Suggest(Registry, new DirectiveContext("import", ""));
         Assert.Equal("App", items.OrderBy(i => i.SortText).First().Label);
     }
+
+    [Fact]
+    public void OffersMasterPagePaths()
+    {
+        var items = DirectiveCompletion.Suggest(
+            Registry, new DirectiveContext("masterPage", ""),
+            _ => new[] { "Views/SiteMaster.dotmaster", "Views/Sub/Other.dotmaster" });
+
+        Assert.Contains(items, i => i.Label == "Views/SiteMaster.dotmaster");
+    }
+
+    [Fact]
+    public void AsksOnlyForTheExtensionTheDirectiveWants()
+    {
+        string? asked = null;
+        DirectiveCompletion.Suggest(
+            Registry, new DirectiveContext("masterPage", ""),
+            ext => { asked = ext; return Array.Empty<string>(); });
+
+        Assert.Equal(".dotmaster", asked);
+    }
+
+    [Fact]
+    public void ShallowestPathComesFirst()
+    {
+        var items = DirectiveCompletion.Suggest(
+            Registry, new DirectiveContext("masterPage", ""),
+            _ => new[] { "Views/Deep/Nested/A.dotmaster", "Site.dotmaster" });
+
+        Assert.Equal("Site.dotmaster", items.OrderBy(i => i.SortText, StringComparer.Ordinal).First().Label);
+    }
+
+    [Fact]
+    public void SaysNothingAboutPathsWithoutAProjectRoot()
+    {
+        // Without a root there is nothing to make a path relative to, and a guess would be
+        // worse than silence
+        Assert.Empty(DirectiveCompletion.Suggest(Registry, new DirectiveContext("masterPage", "")));
+    }
 }
