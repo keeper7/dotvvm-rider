@@ -12,6 +12,13 @@ public static class ViewModelDirective
 {
     private const string DirectiveName = "@viewModel";
 
+    /// <summary>
+    /// What may precede the directive. The byte order mark belongs here because every real file
+    /// starts with one and U+FEFF is *not* whitespace to .NET, so TrimStart() leaves it in place
+    /// and the directive is never recognised.
+    /// </summary>
+    private static readonly char[] Leading = [' ', '\t', '\uFEFF'];
+
     public static ViewModelReference? Parse(string text)
     {
         var lines = text.Split('\n');
@@ -19,8 +26,8 @@ public static class ViewModelDirective
         for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
         {
             var raw = lines[lineIndex].TrimEnd('\r');
-            var trimmedStart = raw.Length - raw.TrimStart().Length;
-            var lineText = raw.TrimStart();
+            var lineText = raw.TrimStart(Leading);
+            var trimmedStart = raw.Length - lineText.Length;
 
             if (!lineText.StartsWith(DirectiveName, StringComparison.OrdinalIgnoreCase))
             {
