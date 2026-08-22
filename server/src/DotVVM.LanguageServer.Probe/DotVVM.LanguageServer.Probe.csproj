@@ -21,7 +21,7 @@
     Target projects are ASP.NET Core applications and their types reference
     Microsoft.AspNetCore.*. Those live in the shared framework, not in NuGet packages, so
     AssemblyDependencyResolver cannot find them. Without this reference the probe fails with
-    na "Could not load Microsoft.AspNetCore.Mvc.RazorPages".
+    a "Could not load Microsoft.AspNetCore.Mvc.RazorPages".
   -->
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
