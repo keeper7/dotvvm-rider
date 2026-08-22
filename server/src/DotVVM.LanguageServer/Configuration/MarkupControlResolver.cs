@@ -32,7 +32,10 @@ public static class MarkupControlResolver
             return baseType is null ? r : r with { BaseTypeName = baseType };
         });
 
-        return new ControlRegistry(registrations, registry.Controls, registry.AttachedProperties);
+        // Everything this does not touch has to be handed over explicitly - the registry is
+        // rebuilt here, and that is exactly how the attached properties were lost once before
+        return new ControlRegistry(
+            registrations, registry.Controls, registry.AttachedProperties, registry.Types);
     }
 
     public static string? ReadFile(string path) =>

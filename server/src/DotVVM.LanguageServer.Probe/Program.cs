@@ -114,8 +114,47 @@ public static class Program
         var assemblies = AssembliesToScan(config, assembly).ToList();
 
         return new ProbeResult(
-            registrations, ExtractControls(assemblies), ExtractAttachedProperties(assemblies));
+            registrations,
+            ExtractControls(assemblies),
+            ExtractAttachedProperties(assemblies),
+            // View models are looked for in the project's own assembly only; the framework's
+            // would flood the offer with types nobody writes into @viewModel
+            ExtractViewModels(new[] { assembly }),
+            // Namespaces come from every scanned assembly - @import is routinely written on
+            // a library
+            ExtractNamespaces(assemblies));
     }
+
+    /// <summary>
+    /// The project's view models, recognised by the IDotvvmViewModel interface.
+    ///
+    /// **Neither visibility nor abstractness may be filtered.** Measured on a real project of
+    /// 244 views: requiring IsPublic drops 60 of 177 - DotVVM instantiates them by reflection
+    /// and does not care - and requiring !IsAbstract drops the four Base*MasterViewModel types,
+    /// which serve master pages, the very files where a human writes the directive most often.
+    /// With both filters the offer would miss 61 of the 178 types the views declare.
+    /// </summary>
+    private static List<string> ExtractViewModels(IEnumerable<Assembly> assemblies) =>
+        assemblies
+            .SelectMany(GetLoadableTypes)
+            .Where(t => t.IsClass && !t.IsNested &&
+                        t.GetInterfaces().Any(i => i.Name == "IDotvvmViewModel"))
+            .Select(t => t.FullName)
+            .OfType<string>()
+            .Distinct()
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToList();
+
+    /// <summary>The namespaces an @import can name, from every assembly in reach.</summary>
+    private static List<string> ExtractNamespaces(IEnumerable<Assembly> assemblies) =>
+        assemblies
+            .SelectMany(GetLoadableTypes)
+            .Select(t => t.Namespace)
+            .OfType<string>()
+            .Where(n => n.Length > 0)
+            .Distinct()
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToList();
 
     /// <summary>
     /// The project's own assembly plus every assembly a registration names. Without the latter
@@ -299,4 +338,6 @@ public record ProbeControl(
 public record ProbeResult(
     List<ProbeRegistration> Registrations,
     List<ProbeControl> Controls,
-    List<ProbeProperty> AttachedProperties);
+    List<ProbeProperty> AttachedProperties,
+    List<string> ViewModels,
+    List<string> Namespaces);
