@@ -92,4 +92,13 @@ public class TagValidatorTests
         var issues = TagValidator.Validate("<dot:A /><dot:B />", Registry, knowsProjectPrefixes: true);
         Assert.Equal(2, issues.Count);
     }
+
+    [Fact]
+    public void CommentedOutControlIsNotReported()
+    {
+        // What the user saw on a real project: a control switched off with <%-- --%> was
+        // still underlined as unknown
+        Assert.Empty(TagValidator.Validate(
+            "<%-- <xyz:Thing /> --%>", Registry, knowsProjectPrefixes: true));
+    }
 }
