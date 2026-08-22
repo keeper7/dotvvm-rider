@@ -66,4 +66,40 @@ public class DothtmlScannerTests
         var tags = DothtmlScanner.ScanTags("<dot:Repeater><ItemTemplate>x</ItemTemplate></dot:Repeater>");
         Assert.Single(tags);
     }
+
+    [Fact]
+    public void SkipsServerSideComment()
+    {
+        // A control commented out this way is never rendered, so validating it would report
+        // an error for code the user has deliberately switched off
+        var tags = DothtmlScanner.ScanTags("<%-- <dot:Button /> --%><dot:TextBox />");
+
+        Assert.Single(tags);
+        Assert.Equal("TextBox", tags[0].TagName);
+    }
+
+    [Fact]
+    public void SkipsMultilineServerSideComment()
+    {
+        var tags = DothtmlScanner.ScanTags("<%--\n<dot:Button />\n--%>\n<dot:TextBox />");
+
+        Assert.Single(tags);
+        Assert.Equal(3, tags[0].Line);
+    }
+
+    [Fact]
+    public void SkipsUnterminatedServerSideCommentToEndOfFile()
+    {
+        Assert.Empty(DothtmlScanner.ScanTags("<%-- <dot:Button />"));
+    }
+
+    [Fact]
+    public void ReportsTagAfterTextThatOnlyLooksLikeACloser()
+    {
+        // Without an opener it is not a comment; treating it as one would hide real markup
+        var tags = DothtmlScanner.ScanTags("a --%> <dot:Button />");
+
+        Assert.Single(tags);
+        Assert.Equal("Button", tags[0].TagName);
+    }
 }

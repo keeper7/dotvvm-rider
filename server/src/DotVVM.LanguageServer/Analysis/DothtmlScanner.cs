@@ -41,6 +41,18 @@ public static class DothtmlScanner
                 continue;
             }
 
+            // A DotVVM server-side comment. Its contents never reach the browser, so anything
+            // inside it must not be validated; without this the scanner walks straight in,
+            // because '%' is neither a letter nor a colon and it simply steps one character on.
+            if (Matches(text, i, "<%--"))
+            {
+                var end = text.IndexOf("--%>", i, StringComparison.Ordinal);
+                var stop = end < 0 ? text.Length : end + 4;
+                (line, lineStart) = CountLines(text, i, stop, line, lineStart);
+                i = stop;
+                continue;
+            }
+
             if (Matches(text, i, "<!") || Matches(text, i, "<?"))
             {
                 var end = text.IndexOf('>', i);
