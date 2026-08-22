@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (81; the server has 143 of its own)
+./gradlew test                           # All tests (103; the server has 148 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -165,7 +165,29 @@ the real quotes, and a test guards that.
 Mask it in **two** places: `DotvvmParserDefinition.createLexer` builds the PSI, but the editor
 paints from `SyntaxHighlighter`, which runs a lexer of its own. With only the first, the tree
 is right while the closing quote and everything after it lose their attribute colouring — a
-mismatch no PSI dump reveals, because the PSI is correct.
+mismatch no PSI dump reveals, because the PSI is correct. Both now run through the single
+`DotvvmMaskingLexer`, which is what keeps them from drifting apart; `DotvvmMasks.applyAll`
+chains every mask, and it is the only caller of the individual maskers.
+
+## Server-side comments
+
+`<%-- --%>` gets the same treatment: `ServerCommentMasker` turns it into `<!-- -->` and the
+lexer does the colouring and the parsing on its own, with no annotator. The padding space goes
+**before** the closer (`--%>` → ` -->`), not after it. With `--> ` the `XmlComment` ended one
+character early and the final `>` fell out of it as whitespace — unpainted, on the first line
+anyone looks at.
+
+Two things the mask alone does not fix, because they read the PSI rather than the token stream:
+
+- The comment becomes an `XmlComment` **inside** an `XmlText`, and `XmlText` is a host
+  `BindingInjector` injects into. Without skipping the comment's ranges, a commented-out
+  binding stays live code — highlighted, resolved and navigable.
+- `DothtmlScanner` on the server has its own branch for `<%--`. Without it `<` passed, `%` was
+  neither a letter nor a colon, and the scanner stepped one character on — straight into the
+  comment. Both `TagValidator` and `HoverHandler` go through it, so one branch fixed both.
+
+`DotvvmCommenter` registers the block form only; DotVVM has no line comment, so the platform
+falls back to the block one for the line action too.
 
 ## Completion
 

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- DotVVM's server-side comment `<%-- --%>` is now treated as a comment: painted like one,
+  kept out of the parse tree, and produced by the comment shortcut in place of `<!-- -->`.
+  Unlike the HTML form it never reaches the browser, which is why it is the one a DotVVM file
+  wants.
 - Completion of a control's properties inside its tag, with the value it takes: a property that
   accepts nothing but a binding is inserted as `Name="{value: }"`, anything else as `Name=""`.
   Required properties come first, then the control's own, then the attached ones. A property
@@ -24,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Markup inside a server-side comment is no longer taken for code. A control switched off with
+  `<%-- --%>` was underlined as unknown, described on hover and had its bindings resolved -
+  the scanner did not know the marker and simply walked into it.
 - Completion no longer offers tag prefixes in the middle of text or inside an attribute value.
   It used to fall back to them whenever it could not find a tag on the caret's own line, which
   also meant it saw nothing at all in a tag spanning several lines - a third of them in a real
