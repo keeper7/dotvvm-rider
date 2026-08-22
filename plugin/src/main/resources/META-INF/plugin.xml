@@ -65,6 +65,9 @@
     <annotator language="DotVVM"
                implementationClass="com.keeper7.dotvvm.directive.DirectiveAnnotator"/>
 
+    <annotator language="DotVVM"
+               implementationClass="com.keeper7.dotvvm.comment.ServerCommentAnnotator"/>
+
     <gotoDeclarationHandler
         implementation="com.keeper7.dotvvm.directive.MasterPageNavigationHandler"/>
 
