@@ -104,4 +104,37 @@ public class ControlRegistryTests
             controls);
         Assert.Equal("App.Controls.Widget", resolved.GetControl("cc", "Widget")?.FullTypeName);
     }
+
+    /// <summary>
+    /// An attached property belongs to no control - it is written as Owner.Name on anything,
+    /// including a plain HTML element. The registry keeps them apart for that reason.
+    /// </summary>
+    [Fact]
+    public void KeepsAttachedPropertiesApartFromTheControls()
+    {
+        var registry = new ControlRegistry(
+            new[] { new ControlRegistration("dot", "DotVVM.Framework.Controls", "DotVVM.Framework", null, null) },
+            new[] { new ControlInfo("DotVVM.Framework.Controls.Button", null, null,
+                                    new[] { new ControlProperty("Text") }) },
+            new[] { new ControlProperty("Validation.Enabled") });
+
+        Assert.Contains(registry.AttachedProperties, p => p.Name == "Validation.Enabled");
+        Assert.DoesNotContain(registry.GetControl("dot", "Button")!.Properties,
+                              p => p.Name == "Validation.Enabled");
+    }
+
+    [Fact]
+    public void MergesAttachedPropertiesFromBothRegistries()
+    {
+        var lower = new ControlRegistry(
+            Array.Empty<ControlRegistration>(), Array.Empty<ControlInfo>(),
+            new[] { new ControlProperty("Validation.Enabled") });
+        var higher = new ControlRegistry(
+            Array.Empty<ControlRegistration>(), Array.Empty<ControlInfo>(),
+            new[] { new ControlProperty("Validator.Value") });
+
+        var merged = lower.MergedWith(higher);
+
+        Assert.Equal(2, merged.AttachedProperties.Count);
+    }
 }

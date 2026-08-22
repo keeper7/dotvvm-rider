@@ -79,6 +79,26 @@ public class AssemblyProbeSourceTests
                      control.Properties.Single(p => p.Name == "DataSource").Value);
     }
 
+    [Fact]
+    public void ParsesTheAttachedProperties()
+    {
+        const string json = """
+            {
+              "Registrations": [
+                {"TagPrefix":"dot","Namespace":"DotVVM.Framework.Controls","Assembly":"DotVVM.Framework","TagName":null,"Src":null}
+              ],
+              "Controls": [],
+              "AttachedProperties": [
+                {"Name":"Validation.Enabled","Usage":"Attribute","Value":"HardCodedOnly","Required":false,"TypeName":"System.Boolean"}
+              ]
+            }
+            """;
+
+        var registry = AssemblyProbeSource.ParseProbeOutput(json);
+
+        Assert.Contains(registry!.AttachedProperties, p => p.Name == "Validation.Enabled");
+    }
+
     /// <summary>
     /// Output from an older probe carries no Controls key at all. The registrations must still
     /// load: a stale bundled probe would otherwise take tier 3 down entirely.

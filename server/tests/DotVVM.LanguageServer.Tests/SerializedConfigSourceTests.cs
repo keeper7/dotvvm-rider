@@ -93,6 +93,23 @@ public class SerializedConfigSourceTests : IDisposable
                               p => p.Name == "ClientID");
     }
 
+    /// <summary>
+    /// An attached property is written as Owner.Name on any element, so it belongs to no
+    /// control - putting it under its declaring type would offer Enabled on a Validation tag
+    /// that nobody ever writes.
+    /// </summary>
+    [Fact]
+    public async Task ReadsAttachedPropertiesUnderTheirOwnerName()
+    {
+        var registry = await new SerializedConfigSource().LoadAsync(_dir, default);
+
+        Assert.Contains(registry!.AttachedProperties, p => p.Name == "Validation.Enabled");
+        Assert.Equal(PropertyValue.HardCodedOnly,
+                     registry.AttachedProperties.Single(p => p.Name == "Validation.Enabled").Value);
+        Assert.DoesNotContain(registry.Controls,
+                              c => c.Properties.Any(p => p.Name == "Enabled"));
+    }
+
     [Fact]
     public async Task ReadsDefaultContentProperty()
     {

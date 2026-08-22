@@ -77,6 +77,14 @@
         "type": "System.String",
         "mappingMode": "Exclude"
       }
+    },
+    "DotVVM.Framework.Controls.Validation": {
+      "Enabled": {
+        "type": "System.Boolean",
+        "isValueInherited": true,
+        "onlyHardcoded": true,
+        "isAttached": true
+      }
     }
   },
   "propertyGroups": {},
