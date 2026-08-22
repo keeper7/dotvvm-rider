@@ -73,6 +73,47 @@ public class CompletionContextScannerTests
     }
 
     /// <summary>
+    /// An attribute counts as written wherever it sits on the tag. Collecting only what precedes
+    /// the caret meant that stepping in front of Text offered Text again.
+    /// </summary>
+    [Fact]
+    public void ReportsTheAttributesWrittenAfterTheCaretToo()
+    {
+        var context = At("<dot:Button |Text=\"x\" Click=\"y\" />");
+        Assert.Equal(new[] { "Text", "Click" }, context.WrittenAttributes);
+    }
+
+    [Fact]
+    public void ReportsTheAttributesOnBothSidesOfTheCaret()
+    {
+        var context = At("<dot:Button Text=\"x\" |Click=\"y\" />");
+        Assert.Equal(new[] { "Text", "Click" }, context.WrittenAttributes);
+    }
+
+    /// <summary>
+    /// The name the caret is inside is being replaced, not written - offering it back is the
+    /// whole point of completing there.
+    /// </summary>
+    [Fact]
+    public void DoesNotCountTheAttributeBeingEditedAsWritten()
+    {
+        var context = At("<dot:Button Te|xt=\"x\" Click=\"y\" />");
+        Assert.Equal(new[] { "Click" }, context.WrittenAttributes);
+    }
+
+    /// <summary>
+    /// A tag being typed has no '>' of its own, so the search for one runs into the next tag in
+    /// the file. Its attributes must not be mistaken for this tag's.
+    /// </summary>
+    [Fact]
+    public void DoesNotBorrowTheAttributesOfTheFollowingTag()
+    {
+        var context = At("<dot:Button |\n<dot:TextBox Text=\"a\" />");
+        Assert.Equal(CompletionTarget.AttributeName, context.Target);
+        Assert.Empty(context.WrittenAttributes!);
+    }
+
+    /// <summary>
     /// The half-typed attribute is not "already written" - filtering it out would remove the
     /// very item the user is reaching for.
     /// </summary>
