@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (81; the server has 68 of its own)
+./gradlew test                           # All tests (81; the server has 88 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -61,7 +61,9 @@ the reported code belongs to `echo`, not to the build.
   `SiteMaster.dotmaster` and `Address.dotcontrol` are written for this fixture, and their
   **structure** is what makes them worth having —
   each caught a bug the hand-written fixtures did not — so keep the byte order marks, the
-  multi-line binding with quotes inside it, and the DotVVM properties on plain HTML elements
+  multi-line binding with quotes inside it, and the DotVVM properties on plain HTML elements.
+  `MyControl` carries a code-behind class named by `@baseType`, because that is the only shape
+  in which a markup control's properties can be resolved at all
 
 Registering `HTMLParserDefinition` directly for the DotVVM language is not enough — it builds the
 PSI file with `HTMLLanguage` hardcoded, so `psiFile.language` never returns DotVVM. That is what
@@ -132,6 +134,17 @@ trades one message per file for a squiggle under every tag. `DirectiveErrorFilte
 leaves the tree alone and hides just that one error; the `PsiErrorElement` stays in the PSI,
 invisible to the user.
 
+`@viewModel` and `@baseType` share one grammar — a type name and an optional assembly after a
+comma — so `TypeDirective` parses both and the two named classes are thin wrappers. Its
+`Leading` set includes **U+FEFF**: the byte order mark is not whitespace to .NET, so `TrimStart()`
+leaves it before the `@` and the directive is never recognised. Every real file has one.
+
+`@baseType` is the only route to a markup control's properties. It is registered by file, not by
+type, so the namespace lookup never reaches it and the `.dotcontrol` file itself declares
+nothing; `MarkupControlResolver` reads the file, records the class name and lets the registry
+match it against a type any tier contributed. It runs **after** the merge, for that reason. A
+`Src` holding `embedded://` is DotVVM's own and is skipped — there is no such file.
+
 Highlighting and navigation therefore hang off text offsets, not off a directive node —
 `DirectiveAnnotator` annotates the file element, and `MasterPageNavigationHandler` resolves
 `@masterPage`, `@js` and `@viewModule` against the project's content roots. Directives naming
@@ -179,6 +192,16 @@ The probe fails on real projects unless all of these hold — each cost a debugg
   Read `ex.Types` from `ReflectionTypeLoadException` instead.
 - **Register an empty `IConfiguration`.** User startups routinely resolve it from DI, and
   `DotvvmConfiguration.CreateDefault()` does not provide it.
+- **`DotvvmProperty.ResolveProperties` needs the class constructors run first** — and not the
+  type's alone. Properties are registered from static fields, and the inherited ones come from
+  the base classes, so `RunClassConstructor` has to walk the whole chain. Measured on
+  `dot:Repeater`: **0** properties with no constructor run, **6** with the type's own, **15**
+  with the chain. The nine missing ones are `Visible`, `DataContext`, `ID`, `IncludeInPage` —
+  the most used of all, so a half-done version looks like it works. It runs the user's own code,
+  hence the `try`/`catch` per control.
+- **Scan the registered assemblies, not just the project's.** `dot:Repeater` lives in
+  `DotVVM.Framework`; without them tier 3 would know every standard control's *name* and none of
+  its properties.
 
 The `properties` section of `dotvvm_serialized_config.json.tmp` is nested (`Type → Property`),
 never the flat `"Type.Property"` key it looks like it might be.

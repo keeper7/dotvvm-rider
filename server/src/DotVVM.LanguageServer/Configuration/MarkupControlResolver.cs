@@ -21,6 +21,10 @@ public static class MarkupControlResolver
         {
             if (!r.IsMarkupControl || r.Src is null || r.BaseTypeName is not null) return r;
 
+            // DotVVM registers a few controls of its own from inside its assembly, with a Src
+            // like embedded://DotVVM.Framework/... There is no such file to read.
+            if (r.Src.Contains("://", StringComparison.Ordinal)) return r;
+
             var text = readFile(Path.Combine(projectRoot, r.Src));
             if (text is null) return r;
 
