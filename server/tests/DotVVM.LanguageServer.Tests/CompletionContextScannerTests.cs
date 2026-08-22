@@ -124,6 +124,30 @@ public class CompletionContextScannerTests
         Assert.Equal(new[] { "Text" }, context.WrittenAttributes);
     }
 
+    /// <summary>
+    /// Renaming an attribute that already has a value must not bring a second one along:
+    /// completing over Enab|led="" used to produce Enabled=""="".
+    /// </summary>
+    [Fact]
+    public void ReportsThatTheEditedAttributeAlreadyHasAValue()
+    {
+        Assert.True(At("<dot:Button Enab|led=\"\" />").EditedAttributeHasValue);
+        Assert.True(At("<dot:Button Enab|led = \"x\" />").EditedAttributeHasValue);
+    }
+
+    [Fact]
+    public void ReportsNoValueForAnAttributeNameOnItsOwn()
+    {
+        Assert.False(At("<dot:Button Ena| />").EditedAttributeHasValue);
+    }
+
+    [Fact]
+    public void ReportsNoValueWhenNoAttributeIsBeingEdited()
+    {
+        Assert.False(At("<dot:Button |Text=\"x\" />").EditedAttributeHasValue);
+        Assert.False(At("<dot:Button Text=\"x\" |/>").EditedAttributeHasValue);
+    }
+
     [Fact]
     public void StaysSilentInsideAnAttributeValue()
     {

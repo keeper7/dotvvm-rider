@@ -68,23 +68,26 @@ public static class ControlCompletion
         return own.Select(p => (Property: p, Attached: false))
             .Concat(registry.AttachedProperties.Select(p => (Property: p, Attached: true)))
             .Where(p => p.Property.IsAttribute && !written.Contains(p.Property.Name))
-            .Select(p => Describe(p.Property, p.Attached))
+            .Select(p => Describe(p.Property, p.Attached, context.EditedAttributeHasValue))
             .ToList();
     }
 
-    private static CompletionSuggestion Describe(ControlProperty property, bool attached)
+    private static CompletionSuggestion Describe(
+        ControlProperty property, bool attached, bool nameOnly)
     {
-        // A property that takes nothing but a binding is worth writing the braces for; anything
-        // else gets an empty value with the caret between the quotes.
-        var insertText = property.Value == PropertyValue.BindingOnly
-            ? $"{property.Name}=\"{{value: $0}}\""
-            : $"{property.Name}=\"$0\"";
+        // Renaming an attribute that already has a value: bringing one of our own would leave
+        // the old one standing behind it. A property that takes nothing but a binding is worth
+        // writing the braces for; anything else gets an empty value with the caret inside.
+        var insertText = nameOnly ? property.Name
+            : property.Value == PropertyValue.BindingOnly
+                ? $"{property.Name}=\"{{value: $0}}\""
+                : $"{property.Name}=\"$0\"";
 
         return new CompletionSuggestion(
             Label: property.Name,
             Kind: SuggestionKind.Property,
             InsertText: insertText,
-            IsSnippet: true,
+            IsSnippet: !nameOnly,
             Detail: property.TypeName is null ? null : ShortTypeName(property.TypeName),
             // Required first, then the control's own, then the attached ones - which apply to
             // every element and would otherwise sit in the middle of the control's own list.

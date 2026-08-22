@@ -11,7 +11,12 @@ public record CompletionContext(
     CompletionTarget Target,
     string? Prefix = null,
     string? TagName = null,
-    IReadOnlyList<string>? WrittenAttributes = null)
+    IReadOnlyList<string>? WrittenAttributes = null,
+    /// <summary>
+    /// Whether the caret is renaming an attribute that already carries a value. Only the name
+    /// may then be inserted: adding one of our own would leave the old value behind it.
+    /// </summary>
+    bool EditedAttributeHasValue = false)
 {
     public static readonly CompletionContext None = new(CompletionTarget.None);
 }
@@ -94,6 +99,7 @@ public static class CompletionContextScanner
         var limit = end < 0 ? text.Length : end;
 
         var written = new List<string>();
+        var editedHasValue = false;
         var i = nameEnd;
 
         while (i < limit)
@@ -122,6 +128,8 @@ public static class CompletionContextScanner
 
             if (j < text.Length && text[j] == '=')
             {
+                if (beingEdited) editedHasValue = true;
+
                 j++;
                 while (j < text.Length && char.IsWhiteSpace(text[j])) j++;
                 var valueEnd = EndOfValue(text, j);
@@ -137,7 +145,8 @@ public static class CompletionContextScanner
             CompletionTarget.AttributeName,
             colon >= 0 ? name[..colon] : null,
             colon >= 0 ? name[(colon + 1)..] : name,
-            written);
+            written,
+            editedHasValue);
     }
 
     /// <summary>
