@@ -1,3 +1,4 @@
+using DotVVM.LanguageServer.Analysis;
 using DotVVM.LanguageServer.Configuration;
 using DotVVM.LanguageServer.Documents;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
@@ -17,16 +18,28 @@ public class CompletionHandler : ICompletionHandler
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Whether the client can handle a $0 placeholder. Captured while registering, because
+    /// Handle does not see the capabilities and inserting "$0" literally would be worse than
+    /// inserting nothing.
+    /// </summary>
+    private bool _snippets;
+
     public CompletionRegistrationOptions GetRegistrationOptions(
-        CompletionCapability capability, ClientCapabilities clientCapabilities) =>
-        new()
+        CompletionCapability capability, ClientCapabilities clientCapabilities)
+    {
+        _snippets = capability.CompletionItem?.SnippetSupport ?? false;
+
+        return new CompletionRegistrationOptions
         {
             DocumentSelector = new TextDocumentSelector(
                 new TextDocumentFilter { Pattern = "**/*.dothtml" },
                 new TextDocumentFilter { Pattern = "**/*.dotmaster" },
                 new TextDocumentFilter { Pattern = "**/*.dotcontrol" }),
-            TriggerCharacters = new Container<string>("<", ":")
+            // The space is what opens the attribute list without the user asking for it
+            TriggerCharacters = new Container<string>("<", ":", " ")
         };
+    }
 
     public async Task<CompletionList> Handle(CompletionParams request, CancellationToken ct)
     {
@@ -34,53 +47,35 @@ public class CompletionHandler : ICompletionHandler
         var text = _documents.Get(uri.ToString());
         if (text is null) return new CompletionList();
 
+        var context = CompletionContextScanner.Detect(
+            text, request.Position.Line, request.Position.Character);
+        if (context.Target == CompletionTarget.None) return new CompletionList();
+
         var projectDir = Path.GetDirectoryName(uri.GetFileSystemPath()) ?? ".";
         var configuration = await _configuration.GetAsync(projectDir, ct);
-        var registry = configuration.Registry;
 
-        var prefix = FindPrefixBeforeCursor(text, request.Position);
+        var suggestions = ControlCompletion.Suggest(configuration.Registry, context);
 
-        // After "<prefix:" offer that prefix's controls, otherwise offer the prefixes themselves
-        if (prefix is not null && registry.IsKnownPrefix(prefix))
+        return new CompletionList(suggestions.Select(ToCompletionItem));
+    }
+
+    private CompletionItem ToCompletionItem(CompletionSuggestion suggestion) =>
+        new()
         {
-            return new CompletionList(registry.GetTagsForPrefix(prefix).Select(tag =>
-                new CompletionItem
-                {
-                    Label = tag,
-                    Kind = CompletionItemKind.Class,
-                    Detail = $"{prefix}:{tag}"
-                }));
-        }
-
-        return new CompletionList(registry.AllPrefixes.Select(p =>
-            new CompletionItem
+            Label = suggestion.Label,
+            Kind = suggestion.Kind switch
             {
-                Label = p,
-                Kind = CompletionItemKind.Module,
-                InsertText = p + ":",
-                Detail = "DotVVM tag prefix"
-            }));
-    }
-
-    /// <summary>Returns the prefix when the caret sits after "&lt;prefix:".</summary>
-    private static string? FindPrefixBeforeCursor(string text, Position position)
-    {
-        var lines = text.Split('\n');
-        if (position.Line >= lines.Length) return null;
-
-        var line = lines[position.Line];
-        var upto = line[..Math.Min(position.Character, line.Length)];
-
-        var lt = upto.LastIndexOf('<');
-        if (lt < 0) return null;
-
-        var afterLt = upto[(lt + 1)..];
-        var colon = afterLt.IndexOf(':');
-        if (colon < 0) return null;
-
-        var candidate = afterLt[..colon];
-        return candidate.All(c => char.IsLetterOrDigit(c) || c == '_') && candidate.Length > 0
-            ? candidate
-            : null;
-    }
+                SuggestionKind.Prefix => CompletionItemKind.Module,
+                SuggestionKind.Tag => CompletionItemKind.Class,
+                _ => CompletionItemKind.Property,
+            },
+            Detail = suggestion.Detail,
+            SortText = suggestion.SortText,
+            InsertText = suggestion.IsSnippet && !_snippets
+                ? suggestion.InsertText.Replace("$0", "")
+                : suggestion.InsertText,
+            InsertTextFormat = suggestion.IsSnippet && _snippets
+                ? InsertTextFormat.Snippet
+                : InsertTextFormat.PlainText,
+        };
 }
