@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (103; the server has 148 of its own)
+./gradlew test                           # All tests (115; the server has 154 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -176,6 +176,18 @@ lexer does the colouring and the parsing on its own, with no annotator. The padd
 **before** the closer (`--%>` → ` -->`), not after it. With `--> ` the `XmlComment` ended one
 character early and the final `>` fell out of it as whitespace — unpainted, on the first line
 anyone looks at.
+
+**Between attributes the trick is not available.** HTML knows no comment inside a tag, so
+`<!--` there reads as three more attributes, the tag never closes, and the rest of the file
+falls apart with it — `</th>` included. DotVVM does allow the form, which is worth checking
+before deciding it is the user's mistake: its own tokenizer parses
+`<th <%-- width="30%" --%>>` with no error and keeps the attributes on either side. The masker
+therefore **blanks such a comment out**, character for character but leaving the line breaks —
+blanking those would shift every line number after it, and LSP diagnostics are addressed by
+line and column. `ServerCommentAnnotator` then puts the colour back off text offsets, the way
+`DirectiveAnnotator` does. On the server the same case needed two branches in
+`CompletionContextScanner`: `EndOfTag` would otherwise stop at a `>` inside the comment, and
+the attribute walk would stop at its `<`.
 
 Two things the mask alone does not fix, because they read the PSI rather than the token stream:
 
