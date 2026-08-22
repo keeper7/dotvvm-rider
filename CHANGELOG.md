@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Hover no longer calls every control it does not know a markup control. It now says which of
+  the three it actually is - an unregistered prefix, a control missing from the registry, or a
+  markup control whose `@baseType` class was not found - matching what the squiggle under the
+  same tag says. With nothing loaded about the project it claims nothing at all.
 - `@viewModel` navigation on a file starting with a byte order mark. U+FEFF is not whitespace to
   .NET, so the directive was never recognised - and every real file has one.
 

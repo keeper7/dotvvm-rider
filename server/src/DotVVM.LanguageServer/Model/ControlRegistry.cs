@@ -57,23 +57,28 @@ public sealed class ControlRegistry
         return markup.Concat(typed).Distinct().ToList();
     }
 
+    /// <summary>Whether the tag is registered as a markup control, that is by file.</summary>
+    public bool IsMarkupControl(string prefix, string tagName) =>
+        MarkupRegistration(prefix, tagName) is not null;
+
     public ControlInfo? GetControl(string prefix, string tagName)
     {
         // A markup control is registered by file, so the namespace lookup below never finds it.
         // Its properties belong to the class named by @baseType, resolved by MarkupControlResolver.
-        var markup = _registrations.FirstOrDefault(r =>
-            r.TagPrefix == prefix && r.IsMarkupControl && r.TagName == tagName
-            && r.BaseTypeName is not null);
-
-        if (markup is not null)
+        var baseTypeName = MarkupRegistration(prefix, tagName)?.BaseTypeName;
+        if (baseTypeName is not null)
         {
-            var byType = _controls.FirstOrDefault(c => c.FullTypeName == markup.BaseTypeName);
+            var byType = _controls.FirstOrDefault(c => c.FullTypeName == baseTypeName);
             if (byType is not null) return byType;
         }
 
         var namespaces = NamespacesFor(prefix).ToHashSet(StringComparer.Ordinal);
         return _controls.FirstOrDefault(c => namespaces.Contains(c.Namespace) && c.TagName == tagName);
     }
+
+    private ControlRegistration? MarkupRegistration(string prefix, string tagName) =>
+        _registrations.FirstOrDefault(r =>
+            r.TagPrefix == prefix && r.IsMarkupControl && r.TagName == tagName);
 
     private IEnumerable<string> NamespacesFor(string prefix) =>
         _registrations
