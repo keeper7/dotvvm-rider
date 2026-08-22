@@ -45,40 +45,15 @@ public class HoverHandler : IHoverHandler
 
         var projectDir = Path.GetDirectoryName(uri.GetFileSystemPath()) ?? ".";
         var configuration = await _configuration.GetAsync(projectDir, ct);
-        var control = configuration.Registry.GetControl(tag.Prefix, tag.TagName);
-
-        var lines = new List<string> { $"**{tag.Prefix}:{tag.TagName}**" };
-
-        if (control is not null)
-        {
-            lines.Add("");
-            lines.Add($"`{control.FullTypeName}`");
-
-            if (control.DefaultContentProperty is not null)
-            {
-                lines.Add("");
-                lines.Add($"Default content property: `{control.DefaultContentProperty}`");
-            }
-
-            if (control.Properties.Count > 0)
-            {
-                lines.Add("");
-                lines.Add("Properties: " + string.Join(", ", control.Properties.Take(15)
-                    .Select(p => $"`{p}`")));
-            }
-        }
-        else
-        {
-            lines.Add("");
-            lines.Add("_Markup control \u2014 properties are not known._");
-        }
 
         return new Hover
         {
             Contents = new MarkedStringsOrMarkupContent(new MarkupContent
             {
                 Kind = MarkupKind.Markdown,
-                Value = string.Join("\n", lines)
+                Value = ControlHoverText.Build(
+                    configuration.Registry, configuration.KnowsProjectPrefixes,
+                    tag.Prefix, tag.TagName)
             }),
             Range = new Range(
                 new Position(tag.Line, tag.Character),
