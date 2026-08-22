@@ -13,11 +13,13 @@ public sealed class ControlRegistry
     public ControlRegistry(
         IEnumerable<ControlRegistration> registrations,
         IEnumerable<ControlInfo> controls,
-        IEnumerable<ControlProperty>? attachedProperties = null)
+        IEnumerable<ControlProperty>? attachedProperties = null,
+        ProjectTypes? types = null)
     {
         _registrations = registrations.ToList();
         _controls = controls.ToList();
         _attached = attachedProperties?.ToList() ?? new List<ControlProperty>();
+        Types = types ?? ProjectTypes.Empty;
     }
 
     public static ControlRegistry Empty { get; } =
@@ -32,6 +34,13 @@ public sealed class ControlRegistry
     /// belong to no control, so they cannot live in ControlInfo.
     /// </summary>
     public IReadOnlyList<ControlProperty> AttachedProperties => _attached;
+
+    /// <summary>
+    /// What a directive's value can name: the project's view models and namespaces. Only the
+    /// assembly probe fills this, so on the lower tiers it stays empty and the directive
+    /// completion says nothing — the same rule the validator follows.
+    /// </summary>
+    public ProjectTypes Types { get; }
 
     public IReadOnlyCollection<string> AllPrefixes =>
         _registrations.Select(r => r.TagPrefix).Distinct().ToList();
@@ -102,5 +111,6 @@ public sealed class ControlRegistry
                  .Select(g => g.First()),
             other._attached.Concat(_attached)
                  .GroupBy(p => p.Name, StringComparer.Ordinal)
-                 .Select(g => g.First()));
+                 .Select(g => g.First()),
+            Types.MergedWith(other.Types));
 }

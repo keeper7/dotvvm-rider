@@ -124,6 +124,25 @@ public class MarkupControlResolverTests
         Assert.Contains(resolved.AttachedProperties, p => p.Name == "Validation.Enabled");
     }
 
+    /// <summary>
+    /// The same trap as the attached properties above: the resolver rebuilds the registry, so
+    /// anything it does not touch has to be handed over by name.
+    /// </summary>
+    [Fact]
+    public void CarriesTheProjectTypesOver()
+    {
+        var registry = new ControlRegistry(
+            new[] { new ControlRegistration("cc", null, null, "Widget", "Controls/Widget.dotcontrol") },
+            Array.Empty<ControlInfo>(),
+            null,
+            new ProjectTypes(new[] { "App.HomeViewModel" }, new[] { "App" }));
+
+        var resolved = MarkupControlResolver.Resolve(registry, "/project", readFile: _ => null);
+
+        Assert.Contains("App.HomeViewModel", resolved.Types.ViewModels);
+        Assert.Contains("App", resolved.Types.Namespaces);
+    }
+
     [Fact]
     public void LeavesTypedRegistrationsUntouched()
     {

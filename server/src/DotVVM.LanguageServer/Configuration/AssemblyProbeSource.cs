@@ -176,12 +176,31 @@ public sealed class AssemblyProbeSource : IConfigurationSource
             return new ControlRegistry(
                 registrations,
                 ParseControls(doc.RootElement),
-                ReadProperties(doc.RootElement, "AttachedProperties"));
+                ReadProperties(doc.RootElement, "AttachedProperties"),
+                new ProjectTypes(
+                    ReadStrings(doc.RootElement, "ViewModels"),
+                    ReadStrings(doc.RootElement, "Namespaces")));
         }
         catch (JsonException)
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Reads an array of plain strings. A probe that predates the key omits it, and that must
+    /// not cost the rest of the tier - the same tolerance the control types get.
+    /// </summary>
+    private static List<string> ReadStrings(JsonElement root, string name)
+    {
+        if (!root.TryGetProperty(name, out var array) || array.ValueKind != JsonValueKind.Array)
+            return new List<string>();
+
+        return array.EnumerateArray()
+            .Where(item => item.ValueKind == JsonValueKind.String)
+            .Select(item => item.GetString())
+            .OfType<string>()
+            .ToList();
     }
 
     /// <summary>
