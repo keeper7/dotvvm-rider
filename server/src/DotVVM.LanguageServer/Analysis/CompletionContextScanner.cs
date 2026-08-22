@@ -88,23 +88,34 @@ public static class CompletionContextScanner
                 : new CompletionContext(CompletionTarget.TagPrefix);
         }
 
+        // The whole tag is walked, not merely the part before the caret: an attribute counts as
+        // written wherever it sits, or stepping in front of one would offer it a second time.
+        var end = EndOfTag(text, start);
+        var limit = end < 0 ? text.Length : end;
+
         var written = new List<string>();
         var i = nameEnd;
 
-        while (i < offset)
+        while (i < limit)
         {
-            while (i < offset && char.IsWhiteSpace(text[i])) i++;
-            if (i >= offset) break;
+            while (i < limit && char.IsWhiteSpace(text[i])) i++;
+            if (i >= limit) break;
+
+            // A tag cannot contain '<'. While one is being typed it has no '>' of its own, so
+            // the search for one lands on the next tag in the file; this stops short of it.
+            if (text[i] == '<') break;
 
             if (text[i] is '/' or '>') { i++; continue; }
 
             var attributeStart = i;
             while (i < text.Length && !char.IsWhiteSpace(text[i]) && text[i] is not ('=' or '>' or '/')) i++;
 
-            // The caret sits inside this name: it is what is being typed, not what is written
-            if (i >= offset) break;
-
             var attribute = text[attributeStart..i];
+
+            // The name the caret is inside is being replaced, not written. Sitting exactly at
+            // its first character does not count: there the caret is in front of a finished
+            // attribute, about to write a new one.
+            var beingEdited = offset > attributeStart && offset <= i;
 
             var j = i;
             while (j < text.Length && char.IsWhiteSpace(text[j])) j++;
@@ -114,12 +125,12 @@ public static class CompletionContextScanner
                 j++;
                 while (j < text.Length && char.IsWhiteSpace(text[j])) j++;
                 var valueEnd = EndOfValue(text, j);
-                if (offset < valueEnd) return CompletionContext.None;
+                if (offset > j && offset < valueEnd) return CompletionContext.None;
                 j = valueEnd;
             }
 
             i = Math.Max(j, i + 1);
-            if (attribute.Length > 0) written.Add(attribute);
+            if (attribute.Length > 0 && !beingEdited) written.Add(attribute);
         }
 
         return new CompletionContext(

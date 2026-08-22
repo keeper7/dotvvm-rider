@@ -8,6 +8,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.Lsp4jClient
 import com.intellij.platform.lsp.api.LspServerNotificationsHandler
 import com.intellij.platform.lsp.api.ProjectWideLspClientDescriptor
+import com.intellij.platform.lsp.api.customization.LspCompletionSupport
 import com.intellij.platform.lsp.api.customization.LspCustomization
 import com.intellij.platform.lsp.api.customization.LspDocumentSymbolDisabled
 import com.intellij.platform.lsp.api.customization.LspFoldingRangeDisabled
@@ -63,6 +64,16 @@ class DotvvmLspClientDescriptor(project: Project, private val serverDll: Path)
         override val onTypeFormattingCustomizer = LspOnTypeFormattingDisabled
         override val foldingRangeCustomizer = LspFoldingRangeDisabled
         override val documentSymbolCustomizer = LspDocumentSymbolDisabled
+
+        /**
+         * The platform asks before honouring each trigger character the server declares, and
+         * without this it did not act on our space — the property list opened only on the first
+         * letter or on Ctrl+Space. Inside a tag a space is exactly where the next attribute
+         * begins, so it is worth opting in.
+         */
+        override val completionCustomizer = object : LspCompletionSupport() {
+            override fun isTriggerCharacterRespected(char: Char): Boolean = true
+        }
     }
 
     private companion object {
