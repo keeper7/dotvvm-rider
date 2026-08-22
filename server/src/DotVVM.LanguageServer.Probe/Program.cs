@@ -21,7 +21,7 @@ public static class Program
     {
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("použití: probe <cesta-k-assembly> <adresář-projektu>");
+            Console.Error.WriteLine("usage: probe <assembly-path> <project-directory>");
             return 2;
         }
 
@@ -91,7 +91,7 @@ public static class Program
         if (startupType is null)
         {
             throw new InvalidOperationException(
-                $"v assembly '{assembly.GetName().Name}' není implementace IDotvvmStartup");
+                $"assembly '{assembly.GetName().Name}' contains no IDotvvmStartup implementation");
         }
 
         var startup = (IDotvvmStartup)Activator.CreateInstance(startupType)!;

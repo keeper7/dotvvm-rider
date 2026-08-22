@@ -33,7 +33,7 @@ public sealed class ProjectConfigurationProvider
     public async Task<ConfigurationResult> GetAsync(string projectDir, CancellationToken ct)
     {
         var registry = ControlRegistry.Empty;
-        var sourceName = "žádná";
+        var sourceName = "none";
         var knowsProjectPrefixes = false;
 
         foreach (var source in _sources)
@@ -47,7 +47,7 @@ public sealed class ProjectConfigurationProvider
             {
                 // Selhání jednoho zdroje nesmí shodit celý provider
                 await Console.Error.WriteLineAsync(
-                    $"[dotvvm-ls] zdroj '{source.Name}' selhal: {ex.Message}");
+                    $"[dotvvm-ls] source '{source.Name}' failed: {ex.Message}");
                 continue;
             }
 

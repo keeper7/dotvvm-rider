@@ -26,13 +26,13 @@ public class ProjectConfigurationProviderTests
     {
         var provider = new ProjectConfigurationProvider(new IConfigurationSource[]
         {
-            new FakeSource("základní", RegistryWithPrefix("dot")),
+            new FakeSource("built-in", RegistryWithPrefix("dot")),
             new FakeSource("config", RegistryWithPrefix("cc")),
-            new FakeSource("plná", RegistryWithPrefix("full")),
+            new FakeSource("assembly", RegistryWithPrefix("full")),
         });
 
         var result = await provider.GetAsync("/x", default);
-        Assert.Equal("plná", result.SourceName);
+        Assert.Equal("assembly", result.SourceName);
     }
 
     [Fact]
@@ -40,9 +40,9 @@ public class ProjectConfigurationProviderTests
     {
         var provider = new ProjectConfigurationProvider(new IConfigurationSource[]
         {
-            new FakeSource("základní", RegistryWithPrefix("dot")),
+            new FakeSource("built-in", RegistryWithPrefix("dot")),
             new FakeSource("config", RegistryWithPrefix("cc")),
-            new FakeSource("plná", null),
+            new FakeSource("assembly", null),
         });
 
         var result = await provider.GetAsync("/x", default);
@@ -54,7 +54,7 @@ public class ProjectConfigurationProviderTests
     {
         var provider = new ProjectConfigurationProvider(new IConfigurationSource[]
         {
-            new FakeSource("základní", RegistryWithPrefix("dot")),
+            new FakeSource("built-in", RegistryWithPrefix("dot")),
             new FakeSource("config", RegistryWithPrefix("cc")),
         });
 
@@ -69,12 +69,12 @@ public class ProjectConfigurationProviderTests
     {
         var provider = new ProjectConfigurationProvider(new IConfigurationSource[]
         {
-            new FakeSource("základní", null),
+            new FakeSource("built-in", null),
         });
 
         var result = await provider.GetAsync("/x", default);
         Assert.False(result.Registry.IsKnownPrefix("dot"));
-        Assert.Equal("žádná", result.SourceName);
+        Assert.Equal("none", result.SourceName);
     }
 
     [Fact]
@@ -82,12 +82,12 @@ public class ProjectConfigurationProviderTests
     {
         var provider = new ProjectConfigurationProvider(new IConfigurationSource[]
         {
-            new FakeSource("základní", RegistryWithPrefix("dot")),
+            new FakeSource("built-in", RegistryWithPrefix("dot")),
             new ThrowingSource(),
         });
 
         var result = await provider.GetAsync("/x", default);
-        Assert.Equal("základní", result.SourceName);
+        Assert.Equal("built-in", result.SourceName);
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class ProjectConfigurationProviderTests
     {
         var provider = new ProjectConfigurationProvider(new IConfigurationSource[]
         {
-            new FakeSource("základní", RegistryWithPrefix("dot")),
+            new FakeSource("built-in", RegistryWithPrefix("dot")),
             new FakeSource("config", null, knowsProjectPrefixes: true),
         });
 
@@ -108,7 +108,7 @@ public class ProjectConfigurationProviderTests
     {
         var provider = new ProjectConfigurationProvider(new IConfigurationSource[]
         {
-            new FakeSource("základní", RegistryWithPrefix("dot")),
+            new FakeSource("built-in", RegistryWithPrefix("dot")),
             new FakeSource("config", RegistryWithPrefix("cc"), knowsProjectPrefixes: true),
         });
 
@@ -118,9 +118,9 @@ public class ProjectConfigurationProviderTests
 
     private sealed class ThrowingSource : IConfigurationSource
     {
-        public string Name => "rozbitá";
+        public string Name => "broken";
         public bool KnowsProjectPrefixes => true;
         public Task<ControlRegistry?> LoadAsync(string dir, CancellationToken ct) =>
-            throw new InvalidOperationException("simulovaná chyba");
+            throw new InvalidOperationException("simulated failure");
     }
 }

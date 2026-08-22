@@ -35,7 +35,7 @@ public static class TagValidator
                 if (!knowsProjectPrefixes) continue;
 
                 issues.Add(new ValidationIssue(
-                    $"Neznámý prefix kontrolky '{tag.Prefix}'. Zaregistruj ho v DotvvmStartup.",
+                    $"Unknown control prefix '{tag.Prefix}'. Register it in DotvvmStartup.",
                     DiagnosticLevel.Error, tag.Line, tag.Character, tag.Length));
                 continue;
             }
@@ -43,7 +43,7 @@ public static class TagValidator
             if (!registry.IsKnownTag(tag.Prefix, tag.TagName))
             {
                 issues.Add(new ValidationIssue(
-                    $"Kontrolka '{tag.Prefix}:{tag.TagName}' nebyla nalezena.",
+                    $"Control '{tag.Prefix}:{tag.TagName}' was not found.",
                     DiagnosticLevel.Error, tag.Line, tag.Character, tag.Length));
             }
         }
