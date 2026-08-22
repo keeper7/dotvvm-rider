@@ -22,6 +22,11 @@ ones rather than replacing them, so standard controls stay known even when the p
 never been built. With an empty registry the validator stays silent: without knowledge of the
 project, underlining everything would be worse than saying nothing.
 
+**Everything in the repository is written in English** — comments, identifiers, user-facing
+strings, commit messages, CHANGELOG and README. Conversation with the maintainer is in Czech;
+the artefacts are not. The one exception is `.private/`, which holds Czech working notes and
+stays outside git.
+
 ## Build Commands
 
 All Gradle commands run from `plugin/`, which is a standalone Gradle project with its own wrapper:
