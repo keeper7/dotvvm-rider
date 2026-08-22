@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Completion of a directive's value, not merely its name: the view model type for `@viewModel`,
+  the control type for `@baseType`, a namespace for `@import` and the path to a master page for
+  `@masterPage`. Measured on a real project, those four carry 713 of its 715 directives.
+  Namespaces and paths are offered shallowest first, since a file usually names the outermost
+  one. With nothing known about the project the list stays empty, the same rule the validator
+  follows.
 - DotVVM's server-side comment `<%-- --%>` is now treated as a comment: painted like one,
   kept out of the parse tree, and produced by the comment shortcut in place of `<!-- -->`.
   Unlike the HTML form it never reaches the browser, which is why it is the one a DotVVM file
@@ -29,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- The list of directive names now matches DotVVM. `viewModule` was offered although no such
+  directive exists - the view module one is called `js` - while `resourceType`,
+  `resourceNamespace` and `wrapperTag` were missing. The parser accepts any name at all, so
+  the offered list is the only place a typo shows.
 - Markup inside a server-side comment is no longer taken for code. A control switched off with
   `<%-- --%>` was underlined as unknown, described on hover and had its bindings resolved -
   the scanner did not know the marker and simply walked into it. A comment between a tag's

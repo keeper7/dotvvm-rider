@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (115; the server has 154 of its own)
+./gradlew test                           # All tests (119; the server has 190 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -231,6 +231,30 @@ says so — otherwise `$0` would be inserted literally.
 `MarkupControlResolver` rebuilds the registry, so anything it does not touch must be passed
 through explicitly. Attached properties were lost exactly that way, and no unit test saw it:
 only driving the whole chain over a real project showed a registry with none of them left.
+
+## Directive values
+
+`DirectiveContextScanner` says whether the caret stands in a directive's value;
+`DirectiveCompletion` says what belongs there. Same split as the pair for tags, and the values
+travel by ordinary `textDocument/completion` — no `dotvvm/*` request was needed, because the
+server already receives the position and `ProjectRoot.Find` gives it the project root.
+
+`ParserConstants` in `DotVVM.Framework` is the only authority on directive names. The parser
+accepts **any** name — `@totalNonsense Something` yields a well-formed directive node with no
+error, and only compiling the view rejects it — so the offered list is where a typo shows.
+Measured against it, `DirectiveScanner` used to offer `viewModule`, which does not exist (the
+view module directive is `js`), and to miss `resourceType`, `resourceNamespace` and `wrapperTag`.
+
+**View models must not be filtered by visibility or abstractness.** Measured on a real project:
+requiring `IsPublic` drops 60 of 177, since DotVVM instantiates them by reflection; requiring
+`!IsAbstract` drops the four `Base*MasterViewModel` types that serve master pages — the files
+where a human writes the directive most often. With both filters the offer misses 61 of the
+178 types the views declare.
+
+`@js` looks like a path and is not one: it names a resource registered in `DotvvmStartup`,
+which is why `ViewModuleDirectiveCompiler` takes a `DotvvmResourceRepository`. Listing `.js`
+files off the disk offered entries like `build-docker.js`. It is left empty on purpose, and
+`MasterPageNavigationHandler` still treats it as a path — a leftover worth revisiting.
 
 ## Testing
 
