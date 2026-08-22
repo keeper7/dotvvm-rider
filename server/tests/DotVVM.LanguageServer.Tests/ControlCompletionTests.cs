@@ -101,6 +101,21 @@ public class ControlCompletionTests
     /// Today the handler falls back to the prefixes whenever it cannot find a tag, so they pop
     /// up in the middle of text. Nothing is the right answer there.
     /// </summary>
+    /// <summary>
+    /// The attached ones apply to every element, so mixing them alphabetically into the
+    /// control's own list buries what the user came for.
+    /// </summary>
+    [Fact]
+    public void SortsTheControlsOwnPropertiesBeforeTheAttachedOnes()
+    {
+        var order = For(InRepeater())
+            .OrderBy(s => s.SortText, StringComparer.Ordinal)
+            .Select(s => s.Label)
+            .ToList();
+
+        Assert.True(order.IndexOf("Visible") < order.IndexOf("Validation.Enabled"));
+    }
+
     [Fact]
     public void OffersNothingWhereNothingBelongs()
     {

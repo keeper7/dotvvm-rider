@@ -106,6 +106,24 @@ public class MarkupControlResolverTests
         Assert.True(resolved.IsKnownTag("dotvvm-internal", "CompilationDiagnostic"));
     }
 
+    /// <summary>
+    /// The resolver rebuilds the registry, so everything it does not touch has to be carried
+    /// over. The attached properties were lost that way once, and no unit test saw it: only the
+    /// whole chain over a real project showed a registry with none of them left.
+    /// </summary>
+    [Fact]
+    public void CarriesTheAttachedPropertiesOver()
+    {
+        var registry = new ControlRegistry(
+            new[] { new ControlRegistration("cc", null, null, "Widget", "Controls/Widget.dotcontrol") },
+            Array.Empty<ControlInfo>(),
+            new[] { new ControlProperty("Validation.Enabled") });
+
+        var resolved = MarkupControlResolver.Resolve(registry, "/project", readFile: _ => null);
+
+        Assert.Contains(resolved.AttachedProperties, p => p.Name == "Validation.Enabled");
+    }
+
     [Fact]
     public void LeavesTypedRegistrationsUntouched()
     {

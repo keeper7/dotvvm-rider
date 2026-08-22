@@ -32,7 +32,7 @@ public static class MarkupControlResolver
             return baseType is null ? r : r with { BaseTypeName = baseType };
         });
 
-        return new ControlRegistry(registrations, registry.Controls);
+        return new ControlRegistry(registrations, registry.Controls, registry.AttachedProperties);
     }
 
     public static string? ReadFile(string path) =>
