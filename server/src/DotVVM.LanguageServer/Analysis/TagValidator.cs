@@ -8,7 +8,7 @@ public record ValidationIssue(
     string Message, DiagnosticLevel Level, int Line, int Character, int Length);
 
 /// <summary>
-/// Kontroluje tagy s prefixem proti registru kontrolek.
+/// Checks prefixed tags against the control registry.
 /// Free of LSP dependencies; the handler converts to protocol types.
 /// </summary>
 public static class TagValidator
