@@ -47,17 +47,44 @@ public class CompletionHandler : ICompletionHandler
         var text = _documents.Get(uri.ToString());
         if (text is null) return new CompletionList();
 
+        var projectDir = Path.GetDirectoryName(uri.GetFileSystemPath()) ?? ".";
+
+        // Directives sit on lines of their own, so the two cases cannot overlap; the order is
+        // a matter of reading, not of correctness
+        var directive = DirectiveContextScanner.Detect(
+            text, request.Position.Line, request.Position.Character);
+        if (directive.Name is not null)
+        {
+            var registry = (await _configuration.GetAsync(projectDir, ct)).Registry;
+            return new CompletionList(
+                DirectiveCompletion.Suggest(registry, directive).Select(ToCompletionItem));
+        }
+
         var context = CompletionContextScanner.Detect(
             text, request.Position.Line, request.Position.Character);
         if (context.Target == CompletionTarget.None) return new CompletionList();
 
-        var projectDir = Path.GetDirectoryName(uri.GetFileSystemPath()) ?? ".";
         var configuration = await _configuration.GetAsync(projectDir, ct);
 
         var suggestions = ControlCompletion.Suggest(configuration.Registry, context);
 
         return new CompletionList(suggestions.Select(ToCompletionItem));
     }
+
+    /// <summary>
+    /// A directive's value is inserted as plain text: it is a type name or a path, with nothing
+    /// for a snippet placeholder to do.
+    /// </summary>
+    private static CompletionItem ToCompletionItem(DirectiveSuggestion suggestion) =>
+        new()
+        {
+            Label = suggestion.Label,
+            Kind = CompletionItemKind.Reference,
+            Detail = suggestion.Detail,
+            SortText = suggestion.SortText,
+            InsertText = suggestion.Label,
+            InsertTextFormat = InsertTextFormat.PlainText,
+        };
 
     private CompletionItem ToCompletionItem(CompletionSuggestion suggestion) =>
         new()
