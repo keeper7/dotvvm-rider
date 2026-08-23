@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using System.Text.Json;
 using DotVVM.Framework.Binding;
+using DotVVM.Framework.Compilation.ControlTree;
 using DotVVM.Framework.Configuration;
 using DotVVM.Framework.Controls;
 using Microsoft.Extensions.Configuration;
@@ -224,10 +225,55 @@ public static class Program
                 BaseType: type.BaseType?.FullName,
                 DefaultContentProperty: type
                     .GetCustomAttribute<ControlMarkupOptionsAttribute>()?.DefaultContentProperty,
-                Properties: properties));
+                Properties: properties,
+                PropertyGroups: ExtractGroups(type)));
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// The property families the control accepts: Class-, Style-, Param- and their kind. The
+    /// name after the prefix is written by the author, so only the prefix can ever be offered.
+    ///
+    /// GetPropertyGroups returns the inherited ones as well, which is why nothing here walks the
+    /// base chain. A group whose prefix is empty stands for "any attribute goes" — there is
+    /// nothing to offer for it, so it is dropped rather than passed on as a blank.
+    /// </summary>
+    private static List<ProbeGroup> ExtractGroups(Type type)
+    {
+        var result = new List<ProbeGroup>();
+
+        foreach (var group in DotvvmPropertyGroup.GetPropertyGroups(type))
+        {
+            var options = group.MarkupOptions;
+            var mode = options?.MappingMode ?? MappingMode.Attribute;
+            if (mode == MappingMode.Exclude) continue;
+
+            var allowBinding = options?.AllowBinding ?? true;
+            var allowHardCoded = options?.AllowHardCodedValue ?? true;
+
+            foreach (var prefix in group.Prefixes)
+            {
+                if (string.IsNullOrEmpty(prefix)) continue;
+
+                result.Add(new ProbeGroup(
+                    Prefix: prefix,
+                    Name: group.Name,
+                    Usage: mode switch
+                    {
+                        MappingMode.InnerElement => "InnerElement",
+                        MappingMode.Both => "Both",
+                        _ => "Attribute",
+                    },
+                    Value: allowBinding && !allowHardCoded ? "BindingOnly"
+                         : !allowBinding && allowHardCoded ? "HardCodedOnly"
+                         : "Any",
+                    TypeName: group.PropertyType.FullName));
+            }
+        }
+
+        return result.OrderBy(g => g.Prefix, StringComparer.Ordinal).ToList();
     }
 
     /// <summary>
@@ -331,9 +377,12 @@ public record ProbeRegistration(
 public record ProbeProperty(
     string Name, string Usage, string Value, bool Required, string? TypeName);
 
+public record ProbeGroup(
+    string Prefix, string Name, string Usage, string Value, string? TypeName);
+
 public record ProbeControl(
     string FullTypeName, string? BaseType, string? DefaultContentProperty,
-    List<ProbeProperty> Properties);
+    List<ProbeProperty> Properties, List<ProbeGroup> PropertyGroups);
 
 public record ProbeResult(
     List<ProbeRegistration> Registrations,

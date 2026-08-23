@@ -44,6 +44,14 @@ public static class ControlHoverText
             }
         }
 
+        // The families are listed apart from the properties: what follows the prefix is the
+        // author's own word, so Class- alongside Text would read as a property named "Class-"
+        if (control.Groups.Count > 0)
+        {
+            text.Append("\n\nProperty groups: ").Append(string.Join(", ",
+                control.Groups.Select(g => $"`{g.Prefix}`")));
+        }
+
         return text.ToString();
     }
 
