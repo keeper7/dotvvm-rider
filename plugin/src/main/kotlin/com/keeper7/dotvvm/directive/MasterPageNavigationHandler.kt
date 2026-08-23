@@ -54,8 +54,17 @@ class MasterPageNavigationHandler : GotoDeclarationHandler {
         if (directive.value.isEmpty()) return null
 
         if (directive.name in typeDirectives) {
-            val source = findTypeSource(file, directive.value) ?: return null
-            return arrayOf(source)
+            // The value has two halves and they lead to different places. The caret decides
+            // which: on the assembly it used to jump to the type's source, which is the one
+            // file the reader was demonstrably not asking about.
+            val valueStart = directive.end - directive.value.length
+            val comma = directive.value.indexOf(',')
+            val onAssembly = comma >= 0 && offset > valueStart + comma
+
+            val target =
+                if (onAssembly) findAssemblyProject(file, directive.value.substring(comma + 1))
+                else findTypeSource(file, directive.value)
+            return target?.let { arrayOf(it) }
         }
 
         // The path is relative to the **DotVVM project's** root, which is the nearest directory
@@ -66,6 +75,20 @@ class MasterPageNavigationHandler : GotoDeclarationHandler {
         val target = resolve(file, directive.value) ?: return null
         val psi = PsiManager.getInstance(file.project).findFile(target) ?: return null
         return arrayOf(psi)
+    }
+
+    /**
+     * The project building that assembly. An assembly has no source of its own; the .csproj is
+     * the nearest thing there is, and its name matches the assembly unless the project renames
+     * it with <AssemblyName>, which nothing in reach does.
+     */
+    private fun findAssemblyProject(file: PsiFile, assembly: String): PsiFile? {
+        val name = assembly.substringBefore(',').trim()
+        if (name.isEmpty()) return null
+
+        val candidates = FilenameIndex.getVirtualFilesByName(
+            "$name.csproj", GlobalSearchScope.projectScope(file.project))
+        return PsiManager.getInstance(file.project).findFile(candidates.firstOrNull() ?: return null)
     }
 
     /**
