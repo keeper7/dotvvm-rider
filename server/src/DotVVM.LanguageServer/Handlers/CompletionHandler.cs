@@ -29,7 +29,10 @@ public class CompletionHandler : ICompletionHandler
     public CompletionRegistrationOptions GetRegistrationOptions(
         CompletionCapability capability, ClientCapabilities clientCapabilities)
     {
-        _snippets = capability.CompletionItem?.SnippetSupport ?? false;
+        // The capability itself can be absent: a client that does not ask for completion at all
+        // still gets its registration options read, and dereferencing it there killed the whole
+        // initialize handshake - the server never came up, for want of a question mark.
+        _snippets = capability?.CompletionItem?.SnippetSupport ?? false;
 
         return new CompletionRegistrationOptions
         {
