@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Cmd-click in a directive opens what it names: the source of the type for `@viewModel` and
+  `@baseType`, and the `.csproj` for the assembly written after the comma. The two halves of
+  the value lead to different places, which is the point - the assembly half used to open the
+  type's source.
 - The file header is now validated. A directive that cannot be repeated but is - `@viewModel`,
   `@masterPage` and their kind - a misspelt name, a missing value, a `@service` without its
   assignment, a master page that is not there and a missing `@viewModel` are all reported the
