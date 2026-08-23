@@ -77,4 +77,12 @@
 
     <additionalTextAttributes scheme="Default" file="colorSchemes/DotvvmDefault.xml"/>
   </extensions>
+
+  <projectListeners>
+    <!-- Focuses the popup that opens on '@'. Without it the item is listed but not selected,
+         so Tab does nothing until an arrow key gives the list the focus - while the popup that
+         LSP opens on ':' inside a tag is focused and Tab works there. -->
+    <listener class="com.keeper7.dotvvm.directive.DirectiveLookupFocus"
+              topic="com.intellij.codeInsight.lookup.LookupManagerListener"/>
+  </projectListeners>
 </idea-plugin>
