@@ -183,4 +183,82 @@ public class DirectiveValidatorTests
         foreach (var file in new[] { "A.dothtml", "A.dotmaster", "A.dotcontrol" })
             Assert.Empty(Validate("@viewModel A\n@import X\n@service a = B\n<html></html>", file));
     }
+
+    private static ControlRegistry RegistryWith(string[] viewModels, string[] namespaces) =>
+        new(Array.Empty<ControlRegistration>(),
+            new[] { new ControlInfo("App.Controls.Card", null, null, Array.Empty<ControlProperty>()) },
+            null,
+            new ProjectTypes(viewModels, namespaces));
+
+    [Fact]
+    public void AnUnknownTypeInAKnownNamespaceIsAnError()
+    {
+        // DotVVM: "Could not resolve type 'App.ViewModels.Typo'."
+        var registry = RegistryWith(["App.ViewModels.HomeViewModel"], ["App.ViewModels"]);
+
+        var issue = Assert.Single(DirectiveValidator.Validate(
+            "@viewModel App.ViewModels.Typo\n<html></html>", "Test.dothtml", registry));
+
+        Assert.Contains("App.ViewModels.Typo", issue.Message);
+        Assert.Equal(DiagnosticLevel.Error, issue.Level);
+    }
+
+    [Fact]
+    public void ATypeInAnUnknownNamespaceIsLeftAlone()
+    {
+        // Measured on the real project: @viewModel System.Object is valid and the registry
+        // knows nothing of System. Without this rule the check would report 8 valid directives.
+        var registry = RegistryWith(["App.ViewModels.HomeViewModel"], ["App.ViewModels"]);
+
+        Assert.Empty(DirectiveValidator.Validate(
+            "@viewModel System.Object\n<html></html>", "Test.dothtml", registry));
+    }
+
+    [Fact]
+    public void AKnownTypeIsSilent()
+    {
+        var registry = RegistryWith(["App.ViewModels.HomeViewModel"], ["App.ViewModels"]);
+
+        Assert.Empty(DirectiveValidator.Validate(
+            "@viewModel App.ViewModels.HomeViewModel\n<html></html>", "Test.dothtml", registry));
+    }
+
+    [Fact]
+    public void AnAssemblyPartDoesNotConfuseTheCheck()
+    {
+        var registry = RegistryWith(["App.ViewModels.HomeViewModel"], ["App.ViewModels"]);
+
+        Assert.Empty(DirectiveValidator.Validate(
+            "@viewModel App.ViewModels.HomeViewModel, App\n<html></html>", "Test.dothtml", registry));
+    }
+
+    [Fact]
+    public void BaseTypeIsCheckedAgainstTheControls()
+    {
+        var registry = RegistryWith([], ["App.Controls"]);
+
+        Assert.Empty(DirectiveValidator.Validate(
+            "@viewModel A\n@baseType App.Controls.Card\n<html></html>", "T.dotcontrol", registry));
+        Assert.Single(DirectiveValidator.Validate(
+            "@viewModel A\n@baseType App.Controls.Missing\n<html></html>", "T.dotcontrol", registry));
+    }
+
+    [Fact]
+    public void WithAnEmptyRegistryNothingIsChecked()
+    {
+        // The same rule as for tags: knowing nothing about the project, silence beats invention
+        Assert.Empty(DirectiveValidator.Validate(
+            "@viewModel App.ViewModels.Typo\n<html></html>", "Test.dothtml", ControlRegistry.Empty));
+    }
+
+    [Fact]
+    public void ImportIsNeverChecked()
+    {
+        // The value of @import *is* a namespace, so the "namespace I know" rule cannot apply.
+        // Measured: 6 of the real project's 226 values would be reported wrongly.
+        var registry = RegistryWith([], ["App.ViewModels"]);
+
+        Assert.Empty(DirectiveValidator.Validate(
+            "@viewModel A\n@import Some.Other.Library\n<html></html>", "Test.dothtml", registry));
+    }
 }
