@@ -88,4 +88,56 @@ class MasterPageNavigationTest : BasePlatformTestCase() {
 
         assertEquals("Site.dotmaster", (targets?.singleOrNull() as? PsiFile)?.name)
     }
+
+    fun testJumpsFromViewModelToItsSource() {
+        // The server answers textDocument/definition correctly, but the platform never asks it
+        // here: the PSI holds a directive as bare XML_DATA_CHARACTERS under the document, and
+        // on such a position no LSP link is even offered
+        myFixture.addFileToProject(
+            "ViewModels/HomeViewModel.cs", "namespace App.ViewModels;\npublic class HomeViewModel {}")
+        myFixture.configureByText(
+            "Page.dothtml", "@viewModel App.ViewModels.Home<caret>ViewModel\n<html></html>")
+
+        val target = GotoDeclarationAction.findTargetElement(
+            project, myFixture.editor, myFixture.editor.caretModel.offset)
+
+        assertEquals("HomeViewModel.cs", (target as? PsiFile)?.name)
+    }
+
+    fun testTheAssemblyHalfIsNotPartOfTheName() {
+        myFixture.addFileToProject(
+            "ViewModels/HomeViewModel.cs", "namespace App.ViewModels;\npublic class HomeViewModel {}")
+        val file = myFixture.configureByText(
+            "Page.dothtml", "@viewModel App.ViewModels.HomeViewModel, App\n<html></html>")
+
+        val offset = file.text.indexOf("HomeViewModel") + 3
+        val targets = MasterPageNavigationHandler()
+            .getGotoDeclarationTargets(file.findElementAt(offset), offset, myFixture.editor)
+
+        assertEquals("HomeViewModel.cs", (targets?.singleOrNull() as? PsiFile)?.name)
+    }
+
+    fun testJumpsFromBaseTypeToo() {
+        myFixture.addFileToProject(
+            "Controls/Card.cs", "namespace App.Controls;\npublic class Card {}")
+        val file = myFixture.configureByText(
+            "C.dotcontrol", "@viewModel A\n@baseType App.Controls.Card\n<html></html>")
+
+        val offset = file.text.indexOf("App.Controls.Card") + 14
+        val targets = MasterPageNavigationHandler()
+            .getGotoDeclarationTargets(file.findElementAt(offset), offset, myFixture.editor)
+
+        assertEquals("Card.cs", (targets?.singleOrNull() as? PsiFile)?.name)
+    }
+
+    fun testNoTargetForATypeWithNoSource() {
+        val file = myFixture.configureByText(
+            "Page.dothtml", "@viewModel App.ViewModels.Nowhere\n<html></html>")
+
+        val offset = file.text.indexOf("Nowhere") + 2
+        val targets = MasterPageNavigationHandler()
+            .getGotoDeclarationTargets(file.findElementAt(offset), offset, myFixture.editor)
+
+        assertTrue(targets == null || targets.isEmpty())
+    }
 }
