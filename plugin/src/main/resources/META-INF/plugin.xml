@@ -88,6 +88,9 @@
     <gotoDeclarationHandler
         implementation="com.keeper7.dotvvm.directive.MasterPageNavigationHandler"/>
 
+    <gotoDeclarationHandler
+        implementation="com.keeper7.dotvvm.navigation.ControlNavigationHandler"/>
+
     <additionalTextAttributes scheme="Default" file="colorSchemes/DotvvmDefault.xml"/>
   </extensions>
 
