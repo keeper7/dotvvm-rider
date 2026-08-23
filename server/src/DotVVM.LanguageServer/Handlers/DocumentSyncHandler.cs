@@ -71,10 +71,15 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
 
     private async Task PublishDiagnosticsAsync(DocumentUri uri, string text, CancellationToken ct)
     {
-        var projectDir = Path.GetDirectoryName(uri.GetFileSystemPath()) ?? ".";
+        var filePath = uri.GetFileSystemPath();
+        var projectDir = Path.GetDirectoryName(filePath) ?? ".";
         var configuration = await _configuration.GetAsync(projectDir, ct);
-        var issues = TagValidator.Validate(
-            text, configuration.Registry, configuration.KnowsProjectPrefixes);
+
+        var issues = TagValidator
+            .Validate(text, configuration.Registry, configuration.KnowsProjectPrefixes)
+            .Concat(DirectiveValidator.Validate(
+                text, filePath, configuration.Registry, MasterPageExists(projectDir)))
+            .ToList();
 
         // The client paints the status bar from this. Without it the user would have no way to
         // tell why the server does not know their own controls: an empty registry is invisible.
@@ -85,6 +90,18 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
             Uri = uri,
             Diagnostics = new Container<Diagnostic>(issues.Select(ToDiagnostic))
         });
+    }
+
+    /// <summary>
+    /// Resolves a master page path against the project root, or null when there is no root to
+    /// resolve it against - and then the path goes unjudged rather than being guessed at.
+    /// </summary>
+    private static Func<string, bool>? MasterPageExists(string projectDir)
+    {
+        var root = ProjectRoot.Find(projectDir);
+        if (root is null) return null;
+
+        return path => File.Exists(Path.Combine(root, path.Replace('/', Path.DirectorySeparatorChar)));
     }
 
     private static Diagnostic ToDiagnostic(ValidationIssue issue) => new()
