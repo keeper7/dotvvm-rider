@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (132; the server has 190 of its own)
+./gradlew test                           # All tests (133; the server has 190 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -255,6 +255,17 @@ where a human writes the directive most often. With both filters the offer misse
 which is why `ViewModuleDirectiveCompiler` takes a `DotvvmResourceRepository`. Listing `.js`
 files off the disk offered entries like `build-docker.js`. It is left empty on purpose, and
 `MasterPageNavigationHandler` still treats it as a path — a leftover worth revisiting.
+
+**An auto-popup opens with no item selected.** In the body the platform picks one itself, which
+is why Tab always inserted a tag and only the directive popup was dead: `currentItem` was null,
+so Tab typed a tab character. Measured — setting `LookupFocusDegree.FOCUSED` changes nothing,
+setting `currentItem` alone is enough. `DirectiveLookupFocus` fills in an absent selection, and
+it has to do so from a `LookupListener` on `uiRefreshed`: when the lookup appears it holds no
+items yet.
+
+Test this through `CompletionAutoPopupTestCase`, never `completeBasic`. Explicit completion
+selects an item on its own, so Tab has always worked there — a green suite said nothing about
+the popup the user sees.
 
 ## The LSP client at run time
 
