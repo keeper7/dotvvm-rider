@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] – 2026-08-23
+
 ### Added
 
 - Cmd-click in a directive opens what it names: the source of the type for `@viewModel` and
@@ -71,6 +73,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `@viewModel` navigation on a file starting with a byte order mark. U+FEFF is not whitespace to
   .NET, so the directive was never recognised - and every real file has one.
 
+### Known limitations
+
+- Until the project is built, the server knows nothing of its own controls and stays silent
+  about them rather than flagging them — the status bar says what it currently knows
+- Validation covers the file header and tag names; the errors a full compilation would give
+  are not there yet
+- `@import` values are not checked, since nothing separates a namespace the registry does not
+  hold from one that does not exist
+- Verified on macOS only so far
+
 ## [0.1.0] – 2026-08-22
 
 First release. The plugin treats `.dothtml`, `.dotmaster` and `.dotcontrol` as a superset
@@ -124,5 +136,6 @@ reported.
 - Completion covers directive names, not their values
 - Verified on macOS only so far
 
-[Unreleased]: https://github.com/keeper7/dotvvm-rider/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/keeper7/dotvvm-rider/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/keeper7/dotvvm-rider/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/keeper7/dotvvm-rider/releases/tag/v0.1.0

@@ -9,6 +9,19 @@
 
   <!-- Shown by Marketplace for this release; the details live in CHANGELOG.md -->
   <change-notes><![CDATA[
+    <h3>0.2.0</h3>
+    <ul>
+      <li>Completion of a control's properties and of a directive's value - the view model type,
+          a namespace, the path to a master page</li>
+      <li>Validation of the file header: a repeated or misspelt directive, a missing value,
+          a type or master page that is not there</li>
+      <li>Server-side comments <code>&lt;%-- --%&gt;</code> are painted, parsed and produced as
+          comments, between a tag's attributes as well</li>
+      <li>Cmd-click in a directive opens the type's source, or the project building the
+          assembly named after the comma</li>
+      <li>Hover reports the properties of the project's own controls, markup controls included</li>
+    </ul>
+
     <h3>0.1.0</h3>
     <ul>
       <li>Highlighting for binding expressions, including nested braces and quotes inside the expression</li>
