@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (153; the server has 251 of its own)
+./gradlew test                           # All tests (153; the server has 264 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -56,6 +56,7 @@ the reported code belongs to `echo`, not to the build.
 - `plugin/src/main/resources/META-INF/plugin.xml` — plugin descriptor
 - `server/src/DotVVM.LanguageServer/` — LSP server: `Model/`, `Configuration/`, `Analysis/`, `Handlers/`
 - `server/src/DotVVM.LanguageServer.Probe/` — loads the project assembly in its own process
+- `server/src/DotVVM.LanguageServer.Compiler/` — runs DotVVM's own view compiler, long-lived
 - `fixtures/SampleApp/` — sample DotVVM app for manual and integration testing; it is a real
   buildable app, because the probe needs a built assembly and go-to-definition needs a `.csproj`.
   `SiteMaster.dotmaster` and `Address.dotcontrol` are written for this fixture, and their
@@ -348,6 +349,69 @@ should be treated as a false alarm until proven otherwise.
 dereferenced its `CompletionCapability` unguarded, so a client that does not ask for completion
 at all killed `initialize` itself — the server never came up. The IDE does ask, which is why
 this only surfaced when a hand-written client asked for `definition` alone.
+
+## Live validation
+
+`TagValidator` and `DirectiveValidator` see only what can be judged without compiling. The rest —
+a mistyped property in a binding, a wrong data context, a value of the wrong type — comes from
+running DotVVM's **own** compiler over the file, in `DotVVM.LanguageServer.Compiler`.
+
+`IViewCompiler.CompileView(source, fileName)` takes the **text**, which is what a buffer being
+edited needs. Two traps sit in that one call: the `Func<IControlBuilder>` it returns is **lazy**,
+so nothing is compiled and even a plainly broken file comes back clean until the Func is called;
+and the result is **cached by fileName**, so without `InvalidateCache` the second run of a file
+reports the errors of the version before it. Both cost a measurement round.
+
+`DotvvmCompilationException.AllDiagnostics` carries `Message`, `Severity` and a `Location` with
+start *and* end line and column — an LSP `Diagnostic` one for one, `DiagnosticConversion` only
+shifts 1-based to 0-based. An empty range is widened to one character, because DotVVM reports one
+for an unfinished tag and nothing would be underlined.
+
+**The process must be long-lived.** The first compilation pays for Roslyn waking up — measured at
+14 s on a cold start — and every one after it costs milliseconds: over a real project of 244
+views, a median of 13 ms and 45 ms at the 90th percentile. A process per request is out of the
+question, which is the opposite of the probe's design.
+
+**It has to be started with the target application's own `deps.json` and `runtimeconfig.json`**
+(`dotnet exec --depsfile … --runtimeconfig …`). DotVVM's `CompiledAssemblyCache` reads
+`DependencyContext.Default`, which comes from the **entry assembly's** deps.json; with our own,
+the project's assembly is absent — measured: 329 assemblies loaded in the process, 317 in that
+list, the project's not among them — and `DefaultControlResolver` throws in its constructor
+before a single view is compiled. In a real application the entry assembly *is* the application,
+which is why nothing there ever hits this.
+
+**Nothing in `Program.Main` may touch a DotVVM type.** The reference is built against the newest
+DotVVM while the project may be on an older one, and the JIT resolves the types a method mentions
+when it compiles that method — so a mention in `Main` would demand exactly that version before
+the assembly resolver is registered. Measured: without the split into `Session`, a build against
+4.3.17 does not run against a project on 4.3.6 at all; with it, one build serves both. The
+reference is 4.3.17 because it is the oldest version with no published vulnerability, and
+`DotvvmCompilationDiagnostic` exists from 4.3.0 — older projects get no live validation.
+
+`CreateDefault()` is missing one service the compiler needs: **`IViewModelProtector`**, which
+`StaticCommandMethodTranslator` takes in its constructor. Without it every `staticCommand` in the
+project fails — measured on a real project, 13 files and 44 diagnostics, all from that one
+service. `ViewModelProtectorStub` supplies it; nothing ever protects anything, compilation only
+needs the service to exist.
+
+The compiler is handed the **project's root**, not the folder the view sits in: DotVVM resolves a
+markup control's `Src` and a master page's path against it, and with the view's own folder a
+registered `<cc:MyControl>` is reported as a file that was not found. For the same reason
+`LiveValidation` keys its processes by root — keyed by folder, a project would end up with one
+Roslyn per directory.
+
+`LiveValidation` decides *when*: a save compiles at once, a change waits 500 ms for the typing to
+stop. A file halfway through a keystroke is not worth compiling — an unfinished tag alone yields
+three complaints, one of them about the end of the file.
+
+Calibrated the way `DirectiveValidator` was: over a real project of 244 views the whole thing
+reports **nothing**, and a finding on real code should be treated as a false alarm until proven
+otherwise. Proven silence is not deadness — the same project with a binding identifier renamed,
+a control renamed or a tag left open reports each of them.
+
+The child process ends on its own when the server dies: its `Console.In.ReadLine()` returns null
+once the pipe closes. Verified with `kill -9` on the server — no process left behind, unlike the
+`dotnet` processes the tests used to leak.
 
 ## The LSP client at run time
 
