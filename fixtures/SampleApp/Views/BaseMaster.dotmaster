@@ -1,0 +1,11 @@
+﻿@viewModel SampleApp.ViewModels.SiteMasterViewModel, SampleApp
+@import SampleApp.Resources
+
+<!DOCTYPE html>
+<html>
+<head><title>Base</title></head>
+<body>
+    <dot:ContentPlaceHolder ID="TitleContent" />
+    <dot:ContentPlaceHolder ID="MainContent" />
+</body>
+</html>
