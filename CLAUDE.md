@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (133; the server has 238 of its own)
+./gradlew test                           # All tests (138; the server has 238 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -266,6 +266,17 @@ items yet.
 Test this through `CompletionAutoPopupTestCase`, never `completeBasic`. Explicit completion
 selects an item on its own, so Tab has always worked there — a green suite said nothing about
 the popup the user sees.
+
+**A directive's path is relative to the DotVVM project's root** — the nearest directory upwards
+holding a `.csproj` — not to a content root of the IDE. The two differ as soon as the opened
+project is larger than the web app: with the whole repository open, `Views/Site.dotmaster`
+resolved against the repository root, where no such file is, and navigation silently found
+nothing. `MasterPageNavigationHandler` now reads it the way the server always has, and falls
+back to the content roots only when there is no `.csproj` at all.
+
+Two navigation traps in one: a test that calls `getGotoDeclarationTargets` directly proves
+nothing about whether the platform ever asks. Go through
+`GotoDeclarationAction.findTargetElement`, the way Cmd+click does.
 
 ## Validating directives
 
