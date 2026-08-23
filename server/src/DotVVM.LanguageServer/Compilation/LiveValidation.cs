@@ -15,8 +15,27 @@ public sealed class LiveValidation : IAsyncDisposable
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pending = new();
     private readonly TimeSpan _quietPeriod;
 
-    public LiveValidation(TimeSpan? quietPeriod = null) =>
+    private readonly bool _enabled;
+
+    /// <summary>
+    /// Set DOTVVM_LS_LIVE_VALIDATION=off to switch the whole thing off. It starts a process that
+    /// runs the project's own code and holds a Roslyn of its own, so there has to be a way out
+    /// that does not involve uninstalling the plugin.
+    /// </summary>
+    public const string DisableVariable = "DOTVVM_LS_LIVE_VALIDATION";
+
+    public LiveValidation(TimeSpan? quietPeriod = null, bool? enabled = null)
+    {
         _quietPeriod = quietPeriod ?? TimeSpan.FromMilliseconds(500);
+        _enabled = enabled ?? IsEnabled(Environment.GetEnvironmentVariable(DisableVariable));
+    }
+
+    /// <summary>Anything but "off"/"false"/"0" leaves it on; an absent variable does too.</summary>
+    public static bool IsEnabled(string? value) =>
+        value is null ||
+        !(value.Equals("off", StringComparison.OrdinalIgnoreCase) ||
+          value.Equals("false", StringComparison.OrdinalIgnoreCase) ||
+          value == "0");
 
     /// <summary>
     /// Compiles once the file has been quiet for the debounce period. A newer change cancels the
@@ -26,6 +45,8 @@ public sealed class LiveValidation : IAsyncDisposable
         string uri, string projectDir, string path, string text,
         Func<IReadOnlyList<CompilerDiagnostic>, Task> publish)
     {
+        if (!_enabled) return;
+
         var source = new CancellationTokenSource();
         if (_pending.TryRemove(uri, out var previous))
         {
@@ -65,6 +86,8 @@ public sealed class LiveValidation : IAsyncDisposable
     public Task<IReadOnlyList<CompilerDiagnostic>?> CompileAsync(
         string projectDir, string path, string text, CancellationToken ct)
     {
+        if (!_enabled) return Task.FromResult<IReadOnlyList<CompilerDiagnostic>?>(null);
+
         // One compiler per **project**, not per directory: keyed by the folder a view sits in,
         // a project would end up with a process per folder, each holding its own Roslyn.
         var root = ProjectRoot.Find(projectDir) ?? projectDir;
