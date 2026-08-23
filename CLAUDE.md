@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (119; the server has 190 of its own)
+./gradlew test                           # All tests (132; the server has 190 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -255,6 +255,18 @@ where a human writes the directive most often. With both filters the offer misse
 which is why `ViewModuleDirectiveCompiler` takes a `DotvvmResourceRepository`. Listing `.js`
 files off the disk offered entries like `build-docker.js`. It is left empty on purpose, and
 `MasterPageNavigationHandler` still treats it as a path — a leftover worth revisiting.
+
+## The LSP client at run time
+
+**Do not let a test start the server.** `BasePlatformTestCase` tears the project down without
+closing the LSP client, so every test that opened a `.dothtml` file left a `dotnet` process
+alive — 48 were found running at once, the oldest over a day old. `DotvvmLspIntegrationProvider`
+therefore returns early under `isUnitTestMode`, and a test guards that.
+
+The platform's own `LspClientImpl.start` can die with a `ConcurrentModificationException` inside
+`LspDocumentSyncManager.forEachOpenedFile` when several supported files are restored at IDE
+startup. Nothing in this plugin appears in that stack; the effect is `Failed to start LSP server`
+in the log and no server at all for that session. Reopening one of the files starts it again.
 
 ## Testing
 
