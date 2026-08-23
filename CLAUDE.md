@@ -378,6 +378,17 @@ start *and* end line and column — an LSP `Diagnostic` one for one, `Diagnostic
 shifts 1-based to 0-based. An empty range is widened to one character, because DotVVM reports one
 for an unfinished tag and nothing would be underlined.
 
+**A wrong identifier is reported twice.** Once on the identifier — `Could not resolve identifier
+'Namxe'`, columns 31 to 36 — and once across the whole binding as `Could not initialize binding
+'…', requirements … were not met`, columns 23 to 37. Showing both underlines everything from the
+opening quote and says nothing more, which is what the user reported. Both carry the same
+`Priority`, so the framework offers no way to tell them apart. `DiagnosticConversion` drops a
+finding that **strictly contains** another of the same or higher severity; nesting survives a
+change of wording between versions, unlike matching on the text. The summary also turns up with
+exactly the same range — an unfinished tag produces that pair — and there nesting cannot help,
+so its opening words are matched as well, but it is only ever dropped when something else covers
+the same place. Alone it is all the user would get.
+
 **The process must be long-lived.** The first compilation pays for Roslyn waking up — measured at
 14 s on a cold start — and every one after it costs milliseconds: over a real project of 244
 views, a median of 13 ms and 45 ms at the 90th percentile. A process per request is out of the

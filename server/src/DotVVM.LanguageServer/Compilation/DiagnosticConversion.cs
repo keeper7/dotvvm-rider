@@ -54,10 +54,68 @@ public static class DiagnosticConversion
     /// fixture - so neither reaches the editor.
     /// </summary>
     public static IReadOnlyList<CompilerIssue> ToIssues(
-        IEnumerable<CompilerDiagnostic> diagnostics) =>
-        diagnostics
+        IEnumerable<CompilerDiagnostic> diagnostics)
+    {
+        var issues = diagnostics
             .Where(d => d.Severity != "Hidden" && !string.IsNullOrWhiteSpace(d.Message))
             .Select(ToIssue)
             .OfType<CompilerIssue>()
             .ToList();
+
+        return issues.Where(issue => !IsSupersededIn(issue, issues)).ToList();
+    }
+
+    /// <summary>
+    /// Whether a narrower finding says the same thing better. DotVVM reports a wrong identifier
+    /// twice: once on the identifier itself - `Could not resolve identifier 'Namxe'`, columns
+    /// 31 to 36 - and once across the whole binding, as `Could not initialize binding '…',
+    /// requirements … were not met`. The second underlines everything from the opening quote and
+    /// adds nothing, so it goes. Both carry the same Priority, so the framework offers no way to
+    /// tell them apart; nesting does, and unlike matching on the wording it survives a change of
+    /// phrasing between versions.
+    /// </summary>
+    private static bool IsSupersededIn(CompilerIssue issue, IReadOnlyList<CompilerIssue> all)
+    {
+        var others = all.Where(other => other != issue && other.Level <= issue.Level).ToList();
+
+        if (others.Any(other => IsInside(other, issue))) return true;
+
+        // The summary also turns up with exactly the same range as the finding it summarises -
+        // an unfinished tag produces that pair - and nesting cannot separate those. Its wording
+        // is the only thing left to go by, so it is matched, but only ever dropped when
+        // something else covers the same place. Alone it is all the user would get.
+        return issue.Message.StartsWith(BindingSummary, StringComparison.Ordinal) &&
+               others.Any(other => Overlaps(other, issue));
+    }
+
+    /// <summary>
+    /// How DotVVM opens the summary it emits beside the real cause: "Could not initialize
+    /// binding '…', requirements … were not met."
+    /// </summary>
+    private const string BindingSummary = "Could not initialize binding";
+
+    private static bool Overlaps(CompilerIssue a, CompilerIssue b)
+    {
+        var aStartsAfterBEnds = a.Line > b.EndLine ||
+                                (a.Line == b.EndLine && a.Character > b.EndCharacter);
+        var bStartsAfterAEnds = b.Line > a.EndLine ||
+                                (b.Line == a.EndLine && b.Character > a.EndCharacter);
+
+        return !aStartsAfterBEnds && !bStartsAfterAEnds;
+    }
+
+    /// <summary>Strictly inside: an identical range is a second finding, not a repetition.</summary>
+    private static bool IsInside(CompilerIssue inner, CompilerIssue outer)
+    {
+        var startsAfter = inner.Line > outer.Line ||
+                          (inner.Line == outer.Line && inner.Character > outer.Character);
+        var endsBefore = inner.EndLine < outer.EndLine ||
+                         (inner.EndLine == outer.EndLine && inner.EndCharacter < outer.EndCharacter);
+        var startsAtOrAfter = inner.Line > outer.Line ||
+                              (inner.Line == outer.Line && inner.Character >= outer.Character);
+        var endsAtOrBefore = inner.EndLine < outer.EndLine ||
+                             (inner.EndLine == outer.EndLine && inner.EndCharacter <= outer.EndCharacter);
+
+        return (startsAfter && endsAtOrBefore) || (startsAtOrAfter && endsBefore);
+    }
 }
