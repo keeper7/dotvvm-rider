@@ -285,6 +285,12 @@ wrapped in `XmlText`, and on such a position the platform never asks the LSP cli
 was not even underlined, while `@masterPage`, handled by the plugin, both underlined and jumped.
 Finding the file is a filesystem search either way, and the plugin has `FilenameIndex`.
 
+**The two halves of a type directive's value lead to different places** — the type to its `.cs`
+source, the assembly after the comma to the `.csproj` that builds it. One range covering the
+whole value sent a click on the assembly to the type's source, the one file the reader was
+demonstrably not asking about. Assembly names match their project files unless `<AssemblyName>`
+says otherwise; when nothing matches, navigation stays silent rather than guessing.
+
 ## Validating directives
 
 What DotVVM refuses is not guesswork: running its own `IControlTreeResolver` over a broken
