@@ -30,6 +30,30 @@ object DirectiveScanner {
     /** Byte order mark at the start of files saved by Visual Studio. */
     private const val BOM = '\uFEFF'
 
+    /**
+     * Whether the offset stands on a directive's **name** rather than in its value.
+     *
+     * The two are completed by different halves of the plugin: names by the plugin, which knows
+     * them without a project, values by the LSP server, which alone has the type registry. With
+     * this missing, every directive name was offered in the middle of a value as well.
+     */
+    fun isOnName(text: String, offset: Int): Boolean {
+        val lineStart = text.lastIndexOf('\n', (offset - 1).coerceAtLeast(0)).let {
+            if (it < 0 || offset == 0) 0 else it + 1
+        }
+        val lineEnd = text.indexOf('\n', lineStart).let { if (it < 0) text.length else it }
+        if (offset < lineStart || offset > lineEnd) return false
+
+        val line = text.substring(lineStart, lineEnd).trimEnd('\r')
+        val content = line.dropWhile { it.isWhitespace() || it == BOM }
+        val indent = line.length - content.length
+        if (!content.startsWith('@')) return content.isBlank()   // an empty line may become one
+
+        val nameEnd = content.indexOfFirst { it.isWhitespace() }
+            .let { if (it < 0) content.length else it }
+        return offset - lineStart - indent <= nameEnd
+    }
+
     fun scan(text: String): List<Directive> {
         val result = mutableListOf<Directive>()
         var offset = 0

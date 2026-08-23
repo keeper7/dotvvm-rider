@@ -28,16 +28,32 @@ class DirectiveCompletionContributor : CompletionContributor() {
 
         if (!isInDirectiveArea(file.text, parameters.offset)) return
 
-        for (name in DirectiveScanner.KNOWN_NAMES) {
-            result.addElement(
-                LookupElementBuilder.create(name)
-                    .withTypeText("DotVVM directive", true)
-            )
+        // Names only where a name goes. In a value the server has the answer, and offering
+        // `@masterPage` in the middle of a view model's type helped nobody.
+        if (DirectiveScanner.isOnName(file.text, parameters.offset)) {
+            for (name in DirectiveScanner.KNOWN_NAMES) {
+                result.addElement(
+                    LookupElementBuilder.create(name)
+                        .withTypeText("DotVVM directive", true)
+                )
+            }
+
+            // After an at sign the user is typing a directive, not an HTML tag. Without this,
+            // <var> and <video> would join the list, because the prefix "v" matches them too.
+            if (startsWithAtSign(file.text, parameters.offset)) {
+                result.stopHere()
+                return
+            }
         }
 
-        // After an at sign the user is typing a directive, not an HTML tag. Without this,
-        // <var> and <video> would join the list, because the prefix "v" matches them too.
-        if (startsWithAtSign(file.text, parameters.offset)) result.stopHere()
+        // Nothing in the file header is an HTML tag, wherever in it the caret stands. The tags
+        // cannot be shut out with stopHere(), which would take the LSP server's answer with
+        // them — measured: 130 tags ahead of the view models the user came for.
+        result.runRemainingContributors(parameters) { completionResult ->
+            if (!completionResult.lookupElement.lookupString.startsWith('<')) {
+                result.passResult(completionResult)
+            }
+        }
     }
 
     /**
