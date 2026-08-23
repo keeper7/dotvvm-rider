@@ -1,3 +1,3 @@
-@viewModel SampleApp.ViewModels.MyControlViewModel, SampleApp
+@viewModel System.Object
 @baseType SampleApp.Controls.MyControl, SampleApp
-<div class="my-control">{{value: Value}}</div>
+<div class="my-control">{{value: _control.Value}}</div>

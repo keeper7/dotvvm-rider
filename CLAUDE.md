@@ -64,7 +64,18 @@ the reported code belongs to `echo`, not to the build.
   each caught a bug the hand-written fixtures did not — so keep the byte order marks, the
   multi-line binding with quotes inside it, and the DotVVM properties on plain HTML elements.
   `MyControl` carries a code-behind class named by `@baseType`, because that is the only shape
-  in which a markup control's properties can be resolved at all
+  in which a markup control's properties can be resolved at all.
+
+  **`Sample.dothtml` compiles cleanly and has to keep doing so** — live validation runs the real
+  compiler over it, so a mistake there shows up as noise in every manual round. What it holds is
+  chosen to survive that: `>` inside a binding, a closing brace inside a string literal, `{0}`
+  inside one, a comment between attributes. An anonymous type (`new { A = x.Name }`) used to
+  stand there as the nested-braces case and had to go — **DotVVM does not compile one at all**,
+  its binding ends at the first `}`, so the file had been broken since it was written and only
+  the compiler noticed. `SiteMaster.dotmaster` and `Address.dotcontrol` are a different matter:
+  their worth is their *structure*, and making them compile would
+  mean writing the resource classes and the data model of a whole imaginary
+  application
 
 Registering `HTMLParserDefinition` directly for the DotVVM language is not enough — it builds the
 PSI file with `HTMLLanguage` hardcoded, so `psiFile.language` never returns DotVVM. That is what
