@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- The file header is now validated. A directive that cannot be repeated but is - `@viewModel`,
+  `@masterPage` and their kind - a misspelt name, a missing value, a `@service` without its
+  assignment, a master page that is not there and a missing `@viewModel` are all reported the
+  way DotVVM itself reports them. Two things the framework passes over in silence are reported
+  as warnings, since nothing else would tell: `@noWrapperTag` in a view, where it governs
+  nothing, and a value on a directive that takes none.
 - Completion of a directive's value, not merely its name: the view model type for `@viewModel`,
   the control type for `@baseType`, a namespace for `@import` and the path to a master page for
   `@masterPage`. Measured on a real project, those four carry 713 of its 715 directives.
