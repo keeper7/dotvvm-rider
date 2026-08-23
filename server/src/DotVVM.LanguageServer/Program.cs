@@ -1,3 +1,4 @@
+using DotVVM.LanguageServer.Compilation;
 using DotVVM.LanguageServer.Configuration;
 using DotVVM.LanguageServer.Documents;
 using DotVVM.LanguageServer.Handlers;
@@ -23,6 +24,7 @@ public static class Program
             {
                 services.AddSingleton<DocumentStore>();
                 services.AddSingleton(ProjectConfigurationProvider.CreateDefault());
+                services.AddSingleton<LiveValidation>();
             })
             .WithHandler<DocumentSyncHandler>()
             .WithHandler<CompletionHandler>()
