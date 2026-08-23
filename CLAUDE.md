@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (138; the server has 240 of its own)
+./gradlew test                           # All tests (142; the server has 240 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -277,6 +277,13 @@ back to the content roots only when there is no `.csproj` at all.
 Two navigation traps in one: a test that calls `getGotoDeclarationTargets` directly proves
 nothing about whether the platform ever asks. Go through
 `GotoDeclarationAction.findTargetElement`, the way Cmd+click does.
+
+**Navigation to a type is done in the plugin, not over LSP**, although the server answers
+`textDocument/definition` for `@viewModel` correctly — verified by hand. A directive is not
+markup: the PSI holds it as bare `XML_DATA_CHARACTERS` directly under `HTML_DOCUMENT`, not even
+wrapped in `XmlText`, and on such a position the platform never asks the LSP client — the link
+was not even underlined, while `@masterPage`, handled by the plugin, both underlined and jumped.
+Finding the file is a filesystem search either way, and the plugin has `FilenameIndex`.
 
 ## Validating directives
 
