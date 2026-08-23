@@ -41,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- A directive's path is resolved against the project's own root - the nearest directory holding
+  a `.csproj` - rather than against a content root of the IDE. With a repository larger than the
+  web app open, `Views/Site.dotmaster` pointed above the project and navigation found nothing.
+- The server starts for a client that does not ask for completion. Reading the absent capability
+  threw, and that took `initialize` itself down.
 - The list of directive names now matches DotVVM. `viewModule` was offered although no such
   directive exists - the view module one is called `js` - while `resourceType`,
   `resourceNamespace` and `wrapperTag` were missing. The parser accepts any name at all, so

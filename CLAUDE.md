@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (138; the server has 238 of its own)
+./gradlew test                           # All tests (138; the server has 240 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -298,6 +298,11 @@ because it does: nothing else would ever tell the user.
 Measured on a real project of 244 files, the whole validator reports **nothing** — which is
 also why it has to be tested on deliberately broken headers, and why any finding on real code
 should be treated as a false alarm until proven otherwise.
+
+**A capability can be absent, not merely empty.** `CompletionHandler.GetRegistrationOptions`
+dereferenced its `CompletionCapability` unguarded, so a client that does not ask for completion
+at all killed `initialize` itself — the server never came up. The IDE does ask, which is why
+this only surfaced when a hand-written client asked for `definition` alone.
 
 ## The LSP client at run time
 
