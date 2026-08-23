@@ -15,6 +15,12 @@
     <cc:MyControl Value="{value: Name}" />
     <div class="not-a-binding">{ this is not a binding }</div>
 
+    <%-- The &quot; entities inside onclick are valid HTML, and the JavaScript the platform
+         injects there is reported as broken - `&` and `quot` reach the JS parser undecoded.
+         It happens the same way in a plain .html file, so it is not ours to fix; the line is
+         kept as the evidence. --%>
+    <button type="button" onclick="document.querySelector(&quot;#menu&quot;).classList.toggle(&quot;open&quot;)">Toggle</button>
+
     <%-- A whole element switched off. The tag inside must not be validated. --%>
     <table>
         <tr>
