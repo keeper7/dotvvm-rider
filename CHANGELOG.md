@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] – 2026-08-23
+
 ### Added
 
 - Completion offers the property families - `Class-`, `Style-`, `Param-` and their kind. What
@@ -162,6 +164,7 @@ reported.
 - Completion covers directive names, not their values
 - Verified on macOS only so far
 
-[Unreleased]: https://github.com/keeper7/dotvvm-rider/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/keeper7/dotvvm-rider/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/keeper7/dotvvm-rider/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/keeper7/dotvvm-rider/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/keeper7/dotvvm-rider/releases/tag/v0.1.0

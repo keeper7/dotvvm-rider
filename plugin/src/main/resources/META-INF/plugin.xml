@@ -9,6 +9,15 @@
 
   <!-- Shown by Marketplace for this release; the details live in CHANGELOG.md -->
   <change-notes><![CDATA[
+    <h3>0.2.1</h3>
+    <ul>
+      <li>Completion offers the property families - <code>Class-</code>, <code>Style-</code>,
+          <code>Param-</code> - on controls and on plain HTML elements alike</li>
+      <li>Cmd-click on a control tag opens the .dotcontrol file registered for it, or the class
+          declaring it</li>
+      <li>A control read from the serialized configuration no longer loses what it inherits</li>
+    </ul>
+
     <h3>0.2.0</h3>
     <ul>
       <li>Completion of a control's properties and of a directive's value - the view model type,
