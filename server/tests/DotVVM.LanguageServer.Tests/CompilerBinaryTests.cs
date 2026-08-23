@@ -70,3 +70,22 @@ public class CompilerBinaryTests
         Assert.True(CompilerBinary.CanRunAgainst("/app/bin/App.dll", _ => true));
     }
 }
+
+public class LiveValidationSwitchTests
+{
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("on")]
+    [InlineData("1")]
+    public void StaysOnByDefault(string? value) =>
+        Assert.True(LiveValidation.IsEnabled(value));
+
+    [Theory]
+    [InlineData("off")]
+    [InlineData("OFF")]
+    [InlineData("false")]
+    [InlineData("0")]
+    public void GoesOffWhenAsked(string value) =>
+        Assert.False(LiveValidation.IsEnabled(value));
+}

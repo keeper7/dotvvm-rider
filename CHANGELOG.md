@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   nothing reported, a median of 13 ms per file and 45 ms at the 90th percentile once warm.
 
   Projects on DotVVM older than 4.3.0 are not covered - the diagnostics the feature rests on do
-  not exist there - and neither is a project that has never been built.
+  not exist there - and neither is a project that has never been built. Setting
+  `DOTVVM_LS_LIVE_VALIDATION=off` switches it off; there is no setting in the IDE for it yet.
 
 ## [0.2.1] – 2026-08-23
 

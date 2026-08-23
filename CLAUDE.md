@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (153; the server has 264 of its own)
+./gradlew test                           # All tests (153; the server has 272 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -408,6 +408,10 @@ Calibrated the way `DirectiveValidator` was: over a real project of 244 views th
 reports **nothing**, and a finding on real code should be treated as a false alarm until proven
 otherwise. Proven silence is not deadness — the same project with a binding identifier renamed,
 a control renamed or a tag left open reports each of them.
+
+`DOTVVM_LS_LIVE_VALIDATION=off` switches it off. Something that starts a process running the
+user's own code and holding a Roslyn of its own needs a way out short of uninstalling the plugin.
+There is no setting in the IDE for it yet — that is the piece still missing.
 
 The child process ends on its own when the server dies: its `Console.In.ReadLine()` returns null
 once the pipe closes. Verified with `kill -9` on the server — no process left behind, unlike the
