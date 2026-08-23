@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Completion offers the property families - `Class-`, `Style-`, `Param-` and their kind. What
+  follows the prefix is the author's own word, so the offer stops there: `Class-` is inserted
+  with the caret where the name goes and a second stop inside the value. Measured over DotVVM
+  4.3.17, the `Class-`, `Style-` and `html:` families sit on 34 of the framework's 56 controls,
+  and on 85 of a real project's own. They are offered on plain HTML elements as well, since an
+  element in a view compiles to `HtmlGenericControl` and takes what it declares - which is where
+  a real project writes `Class-required`, on a `<label>`. A family already written stays in the
+  offer, because `Class-active` next to `Class-invalid` is the ordinary way to use it.
+- Cmd-click on a control tag opens what it names: the `.dotcontrol` file for a markup control,
+  the class declaring it for one registered by namespace. The platform routes an LSP definition
+  through an *implicit* reference provider, which it consults only where the element carries no
+  reference of its own - and an `XmlTag` always does, resolving to its own name. That
+  self-reference is what underlined the tag and then led nowhere.
+
+### Fixed
+
+- A control read from the serialized configuration lost everything it inherits: `dot:Label`
+  offered a single property there - `For` - while `Text`, `Visible` and the whole `Class-`
+  family sit on the classes above it. Only a project that has never been built was affected,
+  since the assembly probe resolves the chain itself.
+- `dot:RouteLink` offered `Param-Id` as though it were a property. It is a use of the `Param-`
+  family, where the word after the dash is the route's own parameter.
+- `dot:Form` was offered, and no such control exists in DotVVM.
+
 ## [0.2.0] – 2026-08-23
 
 ### Added

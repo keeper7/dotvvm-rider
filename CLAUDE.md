@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (145; the server has 240 of its own)
+./gradlew test                           # All tests (153; the server has 251 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -226,7 +226,30 @@ only on the first letter or on Ctrl+Space.
 
 `ControlCompletion` decides *what* may be written and stays free of protocol types, the same
 split as `ControlHoverText`. Snippets are used only when `capability.CompletionItem.SnippetSupport`
-says so — otherwise `$0` would be inserted literally.
+says so — otherwise `$0` would be inserted literally, and a group uses `$1` as well, so the
+fallback strips every `$n` rather than that one.
+
+**Property groups are a second kind of property.** `Class-active`, `Style-width`, `Param-Id` —
+a prefix plus a word the author picks, so only the prefix can be offered. Measured over 4.3.17:
+`Class-`, `Style-` and the `Attributes` family sit on 34 of the framework's 56 controls, and on
+85 of a real project's own; `Param-`/`Query-` belong to `RouteLink`. `Attributes` carries the
+**empty** prefix, meaning any attribute at all goes — nothing to offer, so empty prefixes are
+dropped when read. Unlike a property, a group is never filtered by what is already written.
+The probe reads them from `DotvvmPropertyGroup.GetPropertyGroups(type)`, which resolves
+inheritance itself; tier 2 has them under `propertyGroups`, with one prefix under `prefix` and
+several under `prefixes`.
+
+**They belong on plain HTML elements too.** An element in a view compiles to
+`HtmlGenericControl`, so `<label Class-required="{value: X}">` is ordinary DotVVM — checked
+against the framework's resolver, which accepts it, and it is how a real project writes it.
+`ControlRegistry.HtmlElementGroups` is what the offer uses where there is no prefix. It stays
+empty on tier 1, whose list holds only controls a view writes by name.
+
+**Tier 2 lists only what each type declares.** `dot:Label` holds one property there (`For`);
+`Text`, `Visible` and the `Class-` group all sit above it. `ControlRegistry.GetControl`
+therefore walks the `BaseType` chain and returns the control with everything it inherits, while
+`Controls` keeps what the sources said. `baseType` is written *with* the assembly there and
+`FullTypeName` without, hence `ControlInfo.BareBaseType`.
 
 `MarkupControlResolver` rebuilds the registry, so anything it does not touch must be passed
 through explicitly. Attached properties were lost exactly that way, and no unit test saw it:
@@ -277,6 +300,15 @@ back to the content roots only when there is no `.csproj` at all.
 Two navigation traps in one: a test that calls `getGotoDeclarationTargets` directly proves
 nothing about whether the platform ever asks. Go through
 `GotoDeclarationAction.findTargetElement`, the way Cmd+click does.
+
+**Navigation out of a tag is the plugin's too, and for a different reason.** The platform routes
+an LSP definition through `psi.implicitReferenceProvider`, and *implicit* means it asks only
+where the element carries no reference of its own — an `XmlTag` always carries one, resolving to
+its own name. That self-reference is what underlines `<cc:MyControl>` and then leads nowhere but
+back to the tag. `ControlNavigationHandler` resolves it instead, off registrations the server
+sends as `dotvvm/controlRegistrations` beside the tier; `ControlRegistrations` holds them.
+Read the name from the **token**, not from `XmlTag.name`: an HTML tag reports its name
+lower-cased, and `cc:mycontrol` matches no registration.
 
 **Navigation to a type is done in the plugin, not over LSP**, although the server answers
 `textDocument/definition` for `@viewModel` correctly — verified by hand. A directive is not
