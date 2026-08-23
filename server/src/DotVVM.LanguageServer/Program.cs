@@ -18,7 +18,7 @@ public static class Program
             .ConfigureLogging(logging => logging
                 .AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace)
                 .SetMinimumLevel(LogLevel.Warning))
-            .WithServerInfo(new ServerInfo { Name = "dotvvm-language-server", Version = "0.2.0" })
+            .WithServerInfo(new ServerInfo { Name = "dotvvm-language-server", Version = "0.2.1" })
             .WithServices(services =>
             {
                 services.AddSingleton<DocumentStore>();
