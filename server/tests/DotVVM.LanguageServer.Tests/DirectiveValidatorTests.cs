@@ -130,4 +130,57 @@ public class DirectiveValidatorTests
     {
         Assert.Empty(Validate("@viewModel App.Vm\n<html></html>", "Test.dothtml"));
     }
+
+    [Fact]
+    public void AMarkupControlDirectiveInAViewIsAWarning()
+    {
+        // Verified with the resolver: the framework says nothing, but a wrapper tag governs
+        // nothing in a view either
+        var issue = Assert.Single(Validate(
+            "@viewModel A\n@noWrapperTag\n<html></html>", "Test.dothtml"));
+
+        Assert.Equal(DiagnosticLevel.Warning, issue.Level);
+        Assert.Contains("noWrapperTag", issue.Message);
+    }
+
+    [Fact]
+    public void TheSameDirectiveInAControlIsFine()
+    {
+        Assert.Empty(Validate("@viewModel A\n@noWrapperTag\n<html></html>", "Test.dotcontrol"));
+    }
+
+    [Fact]
+    public void BaseTypeInAViewIsAnError()
+    {
+        // Here the framework does complain: "Markup controls must derive from
+        // DotvvmMarkupControl class!"
+        var issue = Assert.Single(Validate(
+            "@viewModel A\n@baseType App.C\n<html></html>", "Test.dothtml"));
+
+        Assert.Equal(DiagnosticLevel.Error, issue.Level);
+    }
+
+    [Fact]
+    public void MasterPageInAControlIsAWarning()
+    {
+        var issue = Assert.Single(Validate(
+            "@viewModel A\n@masterPage Views/Site.dotmaster\n<html></html>", "Test.dotcontrol"));
+
+        Assert.Equal(DiagnosticLevel.Warning, issue.Level);
+    }
+
+    [Fact]
+    public void MasterPageInAMasterIsFine()
+    {
+        // A master page may inherit from another; measured 26 times in the real project
+        Assert.Empty(Validate(
+            "@viewModel A\n@masterPage Views/Site.dotmaster\n<html></html>", "Test.dotmaster"));
+    }
+
+    [Fact]
+    public void ADirectiveThatFitsAnywhereIsNeverFlagged()
+    {
+        foreach (var file in new[] { "A.dothtml", "A.dotmaster", "A.dotcontrol" })
+            Assert.Empty(Validate("@viewModel A\n@import X\n@service a = B\n<html></html>", file));
+    }
 }
