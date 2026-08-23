@@ -426,6 +426,16 @@ Refreshing it needs `prepareSandbox_runRider`, not `prepareSandbox`: the latter 
 *default* sandbox and leaves the running one untouched. Either way the sandbox has to be
 restarted afterwards — overwriting the plugin underneath a running IDE shuts it down.
 
+**Closing the sandbox leaves its processes behind.** `JBDevice.framework` daemons outlive the
+IDE that started them: eight were found running at once, the oldest three days old, alongside
+the sandbox's own language server. Both leak the same way and neither is ever reaped, so a few
+rounds of `runRider` quietly cost a good deal of memory. Tell them from the real Rider's by
+their path — the sandbox runs them out of the Gradle cache
+(`transforms/…/riderRD-*/bin/JBDevice.framework/`), the installed IDE out of
+`Rider.app/Contents/bin/` — and kill only the former. This is the same trap as the `dotnet`
+processes tests used to leave; there `isUnitTestMode` fixed it at the source, here there is
+nothing to fix, only to sweep up afterwards.
+
 Two related gotchas: Rider does not publish its test-framework as an artifact (it needs
 `TestFrameworkType.Bundled` — note the docs wrongly say `TestFrameworkType.Platform.Bundled`), and
 Rider rejects installer distributions, so it needs `useInstaller.set(false)`.
