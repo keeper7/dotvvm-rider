@@ -42,8 +42,14 @@ public static class DirectiveValidator
     /// <summary>A view and a master page have one; a markup control does not.</summary>
     private const string MasterPageOnly = "masterPage";
 
+    /// <param name="exists">
+    /// Says whether a path relative to the project root is there. Passed in rather than read
+    /// here, so this class stays free of the file system and its tests need no directories on
+    /// disk. Null when the project root is unknown, and then the path is not judged at all.
+    /// </param>
     public static IReadOnlyList<ValidationIssue> Validate(
-        string text, string fileName, ControlRegistry registry)
+        string text, string fileName, ControlRegistry registry,
+        Func<string, bool>? exists = null)
     {
         var issues = new List<ValidationIssue>();
         var seen = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -118,8 +124,16 @@ public static class DirectiveValidator
 
             var missing = MissingType(directive, registry);
             if (missing is not null)
+            {
                 issues.Add(Issue(directive, DiagnosticLevel.Error,
                     $"Could not resolve type '{missing}'."));
+                continue;
+            }
+
+            // DotVVM: "File 'A.dotmaster' was not found."
+            if (directive.Name == MasterPageOnly && exists is not null && !exists(directive.Value))
+                issues.Add(Issue(directive, DiagnosticLevel.Error,
+                    $"File '{directive.Value}' was not found."));
         }
 
         // DotVVM: "The @viewModel directive is missing in the page 'Test.dothtml'!" - it holds
