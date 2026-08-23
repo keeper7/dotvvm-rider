@@ -1,17 +1,25 @@
 @viewModel SampleApp.ViewModels.DifferentlyNamedViewModel, SampleApp
+@import SampleApp.Resources
 
 <!DOCTYPE html>
 <html>
 <head><title>Sample</title></head>
 <body>
     <dot:TextBox Text="{value: Name}" />
-    <dot:Repeater DataSource="{value: Items.Where(x => x.Id > 0).Select(x => new { A = x.Name })}">
+    <%-- The `>` inside the binding would end the tag in plain HTML. DotVVM's own tokenizer
+         accepts it, which is why the scanner has to as well. An anonymous type used to stand
+         here too, and DotVVM does not compile that at all: the binding ends at its first `}`. --%>
+    <dot:Repeater DataSource="{value: Items.Where(x => x.Id > 0)}">
         <ItemTemplate>
-            <span>{{value: A}}</span>
+            <span>{{value: Name}}</span>
         </ItemTemplate>
     </dot:Repeater>
+    <dot:Literal Class-required="{value: true}" Text="{value: Name}" />
     <dot:Button Text="{resource: Labels.Save}" Click="{command: Save()}" />
-    <span>{value: Format("}")}</span>
+    <%-- Braces inside a string literal: the case a regex-based scanner got wrong, since the
+         closing one is not the end of the binding. --%>
+    <span>{{value: Name + "}"}}</span>
+    <span>{{value: string.Format("{0}", Name)}}</span>
     <cc:MyControl Value="{value: Name}" />
     <div class="not-a-binding">{ this is not a binding }</div>
 

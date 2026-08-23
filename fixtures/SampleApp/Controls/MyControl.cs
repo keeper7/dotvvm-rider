@@ -18,5 +18,14 @@ namespace SampleApp.Controls
 
         public static readonly DotvvmProperty CaptionProperty
             = DotvvmProperty.Register<string?, MyControl>(c => c.Caption);
+
+        public string? Value
+        {
+            get => (string?)GetValue(ValueProperty);
+            set => SetValue(ValueProperty, value);
+        }
+
+        public static readonly DotvvmProperty ValueProperty
+            = DotvvmProperty.Register<string?, MyControl>(c => c.Value);
     }
 }
