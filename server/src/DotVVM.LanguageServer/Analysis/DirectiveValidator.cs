@@ -110,8 +110,16 @@ public static class DirectiveValidator
             // DotVVM: "Assignment operation expected - the correct form is
             // `@service myStringService = ISomeService<string>`"
             if (directive.Name == "service" && !directive.Value.Contains('='))
+            {
                 issues.Add(Issue(directive, DiagnosticLevel.Error,
                     "Assignment expected: the form is '@service alias = SomeService'."));
+                continue;
+            }
+
+            var missing = MissingType(directive, registry);
+            if (missing is not null)
+                issues.Add(Issue(directive, DiagnosticLevel.Error,
+                    $"Could not resolve type '{missing}'."));
         }
 
         // DotVVM: "The @viewModel directive is missing in the page 'Test.dothtml'!" - it holds
@@ -122,6 +130,39 @@ public static class DirectiveValidator
                 DiagnosticLevel.Error, 0, 0, 0));
 
         return issues;
+    }
+
+    /// <summary>
+    /// The type a directive names, when the registry can say for certain that it is not there.
+    ///
+    /// **A type is only judged when its namespace is known.** Measured on a real project:
+    /// without that rule the check reports `@viewModel System.Object` and five more valid
+    /// directives - eight in all - because the registry holds the project's assemblies and not
+    /// the BCL's. It is the same reasoning as IConfigurationSource.KnowsProjectPrefixes for
+    /// tags, one storey down.
+    ///
+    /// @import is never judged: its value *is* a namespace, so there is nothing to tell an
+    /// unknown one from a wrong one.
+    /// </summary>
+    private static string? MissingType(DirectiveOccurrence directive, ControlRegistry registry)
+    {
+        var known = directive.Name switch
+        {
+            "viewModel" => registry.Types.ViewModels,
+            "baseType" => registry.Controls.Select(c => c.FullTypeName).ToList(),
+            _ => null,
+        };
+        if (known is null) return null;
+
+        // Everything after a comma names the assembly, not the type
+        var typeName = directive.Value.Split(',')[0].Trim();
+        var lastDot = typeName.LastIndexOf('.');
+        if (lastDot < 0) return null;                    // no namespace to recognise it by
+
+        var ns = typeName[..lastDot];
+        if (!registry.Types.Namespaces.Contains(ns, StringComparer.Ordinal)) return null;
+
+        return known.Contains(typeName, StringComparer.Ordinal) ? null : typeName;
     }
 
     private static ValidationIssue Issue(
