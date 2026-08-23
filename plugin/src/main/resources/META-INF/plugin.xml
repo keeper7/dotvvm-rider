@@ -56,7 +56,11 @@
     <lang.inspectionSuppressor language="DotVVM"
                                implementationClass="com.keeper7.dotvvm.ide.DotvvmInspectionSuppressor"/>
 
-    <completion.contributor language="DotVVM" order="first"
+    <!-- Registered for XML, not for DotVVM: the tokens the caret sits on carry XmlLanguage
+         even though the file itself is DotVVM, and the platform looks for an auto-popup
+         contributor by the *element's* language. With DotVVM here, typing @ opened nothing.
+         The contributor checks the file type itself, so it stays silent elsewhere. -->
+    <completion.contributor language="XML" order="first"
                             implementationClass="com.keeper7.dotvvm.directive.DirectiveCompletionContributor"/>
 
     <highlightErrorFilter

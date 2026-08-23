@@ -1,6 +1,7 @@
 package com.keeper7.dotvvm.directive
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -111,5 +112,30 @@ class DirectiveScannerTest {
     @Test fun doesNotRecogniseViewModule() {
         // There is no `viewModule` directive in DotVVM; the one that exists is `js`
         assertTrue(DirectiveScanner.scan("@viewModule Foo.js\n<html></html>").isEmpty())
+    }
+
+    @Test fun theCaretOnTheNameIsOnTheName() {
+        assertTrue(DirectiveScanner.isOnName("@view\n<html></html>", 5))
+        assertTrue(DirectiveScanner.isOnName("@viewModel App.Vm", 4))
+        assertTrue(DirectiveScanner.isOnName("@viewModel App.Vm", 10))
+    }
+
+    @Test fun theCaretInTheValueIsNotOnTheName() {
+        // This is what used to offer every directive name in the middle of a value
+        assertFalse(DirectiveScanner.isOnName("@viewModel App.Vm", 11))
+        assertFalse(DirectiveScanner.isOnName("@viewModel ", 11))
+    }
+
+    @Test fun anEmptyLineCanStillBecomeADirective() {
+        assertTrue(DirectiveScanner.isOnName("\n<html></html>", 0))
+    }
+
+    @Test fun theCaretInMarkupIsNotOnAName() {
+        assertFalse(DirectiveScanner.isOnName("<html>@x</html>", 7))
+    }
+
+    @Test fun handlesAnIndentedDirective() {
+        assertTrue(DirectiveScanner.isOnName("   @view", 8))
+        assertFalse(DirectiveScanner.isOnName("   @viewModel App", 15))
     }
 }
