@@ -9,6 +9,16 @@
 
   <!-- Shown by Marketplace for this release; the details live in CHANGELOG.md -->
   <change-notes><![CDATA[
+    <h3>0.3.0</h3>
+    <ul>
+      <li>Live validation: the errors a build would report now show while editing - a mistyped
+          property in a binding, an identifier the data context does not have, a value of the
+          wrong type. The messages come from DotVVM's own view compiler</li>
+      <li>Saving compiles at once; typing waits half a second for the keystrokes to stop</li>
+      <li>Needs a project built on DotVVM 4.3.0 or newer; set
+          <code>DOTVVM_LS_LIVE_VALIDATION=off</code> to switch it off</li>
+    </ul>
+
     <h3>0.2.1</h3>
     <ul>
       <li>Completion offers the property families - <code>Class-</code>, <code>Style-</code>,
