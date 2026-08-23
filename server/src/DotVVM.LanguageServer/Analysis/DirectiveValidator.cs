@@ -76,6 +76,13 @@ public static class DirectiveValidator
                     "Assignment expected: the form is '@service alias = SomeService'."));
         }
 
+        // DotVVM: "The @viewModel directive is missing in the page 'Test.dothtml'!" - it holds
+        // for a markup control too. An empty file is spared: the user has only just made it.
+        if (!seen.ContainsKey("viewModel") && text.Trim().Length > 0)
+            issues.Add(new ValidationIssue(
+                $"The @viewModel directive is missing in '{Path.GetFileName(fileName)}'.",
+                DiagnosticLevel.Error, 0, 0, 0));
+
         return issues;
     }
 
