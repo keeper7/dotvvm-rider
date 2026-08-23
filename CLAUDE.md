@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (133; the server has 190 of its own)
+./gradlew test                           # All tests (133; the server has 238 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -266,6 +266,27 @@ items yet.
 Test this through `CompletionAutoPopupTestCase`, never `completeBasic`. Explicit completion
 selects an item on its own, so Tab has always worked there — a green suite said nothing about
 the popup the user sees.
+
+## Validating directives
+
+What DotVVM refuses is not guesswork: running its own `IControlTreeResolver` over a broken
+header makes it say so, because the resolver writes its complaints back onto the parser's
+nodes. That is where `DirectiveValidator`'s messages come from. `MarkupPageMetadata` settles
+how many of each may appear — what it holds as an `ImmutableList` may repeat (`@import`,
+`@service`, `@property`), everything else may not.
+
+**A type is judged only when its namespace is known.** Measured over a real project: without
+that rule the check reports `@viewModel System.Object` and five `@import` values — eight valid
+directives — because the registry holds the project's assemblies, not the BCL's. Same reasoning
+as `KnowsProjectPrefixes` for tags, one storey down. `@import` is never judged at all: its value
+*is* a namespace, so nothing tells an unknown one from a wrong one.
+
+A misspelt directive name is worth an error even though DotVVM ignores it, and precisely
+because it does: nothing else would ever tell the user.
+
+Measured on a real project of 244 files, the whole validator reports **nothing** — which is
+also why it has to be tested on deliberately broken headers, and why any finding on real code
+should be treated as a false alarm until proven otherwise.
 
 ## The LSP client at run time
 
