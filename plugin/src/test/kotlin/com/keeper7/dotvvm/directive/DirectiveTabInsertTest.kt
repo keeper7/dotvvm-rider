@@ -1,5 +1,6 @@
 package com.keeper7.dotvvm.directive
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTestCase
 
 /**
@@ -8,6 +9,13 @@ import com.intellij.testFramework.fixtures.CompletionAutoPopupTestCase
  * suite said nothing about the popup the user actually sees.
  */
 class DirectiveTabInsertTest : CompletionAutoPopupTestCase() {
+
+    /** Editor models may only be read from the EDT, and this fixture runs the test off it. */
+    private fun onEdt(block: () -> Boolean): Boolean {
+        var result = false
+        ApplicationManager.getApplication().invokeAndWait { result = block() }
+        return result
+    }
 
     private fun firstLine() = myFixture.editor.document.text.lineSequence().first()
 
@@ -48,5 +56,26 @@ class DirectiveTabInsertTest : CompletionAutoPopupTestCase() {
         myFixture.type('\t')
 
         assertTrue(firstLine(), firstLine().contains("class"))
+    }
+
+    fun testTheValueHalfIsSelectedToo() {
+        // Without a selection Tab reached Emmet and turned `@masterPage Vi` into
+        // `@masterPage <Vi></Vi>` — markup in the middle of a header. The values themselves
+        // come from the server, which does not run here, so this checks the condition that
+        // guards them.
+        myFixture.configureByText("E.dothtml", "@viewModel A\n<caret>\n<html></html>")
+        type("@masterPage Vi")
+
+        assertTrue("the caret must count as being in the header", onEdt {
+            DirectiveLookupFocus().isInHeader(myFixture.file, myFixture.editor.caretModel.offset)
+        })
+    }
+
+    fun testTheBodyIsNotTheHeader() {
+        myFixture.configureByText("F.dothtml", "@viewModel A\n<html><div <caret>></div></html>")
+
+        assertFalse(onEdt {
+            DirectiveLookupFocus().isInHeader(myFixture.file, myFixture.editor.caretModel.offset)
+        })
     }
 }

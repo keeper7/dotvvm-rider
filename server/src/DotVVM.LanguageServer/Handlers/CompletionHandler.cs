@@ -4,6 +4,7 @@ using DotVVM.LanguageServer.Documents;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace DotVVM.LanguageServer.Handlers;
 
@@ -57,11 +58,20 @@ public class CompletionHandler : ICompletionHandler
         {
             var registry = (await _configuration.GetAsync(projectDir, ct)).Registry;
             var root = ProjectRoot.Find(projectDir);
+
+            // What the client should replace, said outright rather than left to it. A path
+            // holds a slash, and the editor's own idea of the word under the caret stops at
+            // one - completing over `Views` then produced `ViewsViews/SiteMaster.dotmaster`.
+            var replaced = new Range(
+                new Position(request.Position.Line,
+                             request.Position.Character - directive.WrittenValue.Length),
+                request.Position);
+
             return new CompletionList(
                 DirectiveCompletion
                     .Suggest(registry, directive,
                              root is null ? null : extension => ViewFiles.Find(root, extension))
-                    .Select(ToCompletionItem));
+                    .Select(suggestion => ToCompletionItem(suggestion, replaced)));
         }
 
         var context = CompletionContextScanner.Detect(
@@ -79,14 +89,16 @@ public class CompletionHandler : ICompletionHandler
     /// A directive's value is inserted as plain text: it is a type name or a path, with nothing
     /// for a snippet placeholder to do.
     /// </summary>
-    private static CompletionItem ToCompletionItem(DirectiveSuggestion suggestion) =>
+    private static CompletionItem ToCompletionItem(
+        DirectiveSuggestion suggestion, Range replaced) =>
         new()
         {
             Label = suggestion.Label,
             Kind = CompletionItemKind.Reference,
             Detail = suggestion.Detail,
             SortText = suggestion.SortText,
-            InsertText = suggestion.Label,
+            TextEdit = new TextEditOrInsertReplaceEdit(
+                new TextEdit { Range = replaced, NewText = suggestion.Label }),
             InsertTextFormat = InsertTextFormat.PlainText,
         };
 
