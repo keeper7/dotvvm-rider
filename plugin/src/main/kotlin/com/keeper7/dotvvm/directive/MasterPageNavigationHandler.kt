@@ -2,16 +2,12 @@ package com.keeper7.dotvvm.directive
 
 import com.intellij.codeInsight.navigation.actions.GotoDeclarationHandler
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.psi.search.FilenameIndex
-import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.keeper7.dotvvm.lang.DotControlFileType
 import com.keeper7.dotvvm.lang.DotHtmlFileType
 import com.keeper7.dotvvm.lang.DotMasterFileType
+import com.keeper7.dotvvm.navigation.ProjectFiles
 
 /**
  * Navigation out of a directive: to the file `@masterPage` names, and to the source of the type
@@ -62,8 +58,9 @@ class MasterPageNavigationHandler : GotoDeclarationHandler {
             val onAssembly = comma >= 0 && offset > valueStart + comma
 
             val target =
-                if (onAssembly) findAssemblyProject(file, directive.value.substring(comma + 1))
-                else findTypeSource(file, directive.value)
+                if (onAssembly) ProjectFiles.findAssemblyProject(
+                    file.project, directive.value.substring(comma + 1))
+                else ProjectFiles.findTypeSource(file.project, directive.value)
             return target?.let { arrayOf(it) }
         }
 
@@ -72,64 +69,9 @@ class MasterPageNavigationHandler : GotoDeclarationHandler {
         // the opened project is larger than the web app: with the whole repository open,
         // `Views/Site.dotmaster` resolved against the repository root, where nothing of the
         // sort exists. The server has always read it this way.
-        val target = resolve(file, directive.value) ?: return null
+        val target = ProjectFiles.resolve(file, directive.value) ?: return null
         val psi = PsiManager.getInstance(file.project).findFile(target) ?: return null
         return arrayOf(psi)
     }
 
-    /**
-     * The project building that assembly. An assembly has no source of its own; the .csproj is
-     * the nearest thing there is, and its name matches the assembly unless the project renames
-     * it with <AssemblyName>, which nothing in reach does.
-     */
-    private fun findAssemblyProject(file: PsiFile, assembly: String): PsiFile? {
-        val name = assembly.substringBefore(',').trim()
-        if (name.isEmpty()) return null
-
-        val candidates = FilenameIndex.getVirtualFilesByName(
-            "$name.csproj", GlobalSearchScope.projectScope(file.project))
-        return PsiManager.getInstance(file.project).findFile(candidates.firstOrNull() ?: return null)
-    }
-
-    /**
-     * The file declaring the type, searched by the last segment of its name — a view model is
-     * routinely named differently from the view, and the file is named after the class. Anything
-     * after a comma is the assembly and not part of the name.
-     */
-    private fun findTypeSource(file: PsiFile, value: String): PsiFile? {
-        val typeName = value.substringBefore(',').trim().substringBefore('<')
-        val shortName = typeName.substringAfterLast('.')
-        if (shortName.isEmpty()) return null
-
-        val scope = GlobalSearchScope.projectScope(file.project)
-        val candidates = FilenameIndex.getVirtualFilesByName("$shortName.cs", scope)
-        val manager = PsiManager.getInstance(file.project)
-
-        // The file named after the class is the usual case; when several match, the one that
-        // really declares it wins
-        val declaring = candidates.firstOrNull { candidate ->
-            manager.findFile(candidate)?.text?.contains("class $shortName") == true
-        }
-        return manager.findFile(declaring ?: candidates.firstOrNull() ?: return null)
-    }
-
-    private fun resolve(file: PsiFile, path: String): VirtualFile? {
-        val root = projectRootOf(file.viewProvider.virtualFile)
-        root?.findFileByRelativePath(path)?.let { return it }
-
-        // No .csproj anywhere above — a bare folder of views, say. The content roots are then
-        // the best guess left, and walking all of them is cheap.
-        return ProjectRootManager.getInstance(file.project).contentRoots
-            .firstNotNullOfOrNull { it.findFileByRelativePath(path) }
-    }
-
-    /** The nearest directory upwards that holds a .csproj, the same rule the server follows. */
-    private fun projectRootOf(file: VirtualFile?): VirtualFile? {
-        var dir = file?.parent
-        while (dir != null) {
-            if (dir.children?.any { it.extension == "csproj" } == true) return dir
-            dir = dir.parent
-        }
-        return null
-    }
 }

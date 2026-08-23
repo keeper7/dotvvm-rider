@@ -85,6 +85,21 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
         // tell why the server does not know their own controls: an empty registry is invisible.
         _server.SendNotification("dotvvm/configurationTier", new { tier = configuration.SourceName });
 
+        // Navigation from a tag has to happen in the plugin: the platform asks an LSP server
+        // only where an element carries no reference of its own, and an XmlTag carries one.
+        // The registrations are what the plugin cannot work out for itself, so they travel.
+        _server.SendNotification("dotvvm/controlRegistrations", new
+        {
+            registrations = configuration.Registry.Registrations.Select(r => new
+            {
+                prefix = r.TagPrefix,
+                tagName = r.TagName,
+                src = r.Src,
+                @namespace = r.Namespace,
+                assembly = r.Assembly,
+            })
+        });
+
         _server.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams
         {
             Uri = uri,
