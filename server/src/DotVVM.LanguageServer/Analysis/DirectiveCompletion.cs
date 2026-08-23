@@ -24,7 +24,39 @@ public static class DirectiveCompletion
     public static IReadOnlyList<DirectiveSuggestion> Suggest(
         ControlRegistry registry,
         DirectiveContext context,
-        Func<string, IReadOnlyList<string>>? files = null) => context.Name switch
+        Func<string, IReadOnlyList<string>>? files = null)
+    {
+        // After the comma an assembly is being written, not a type, and only a directive that
+        // carries a type has such a half at all
+        if (context.InAssembly)
+            return context.Name is not null && TypeDirectives.Contains(context.Name)
+                ? Assemblies(registry)
+                : Array.Empty<DirectiveSuggestion>();
+
+        return SuggestValue(registry, context, files);
+    }
+
+    /// <summary>The directives whose value is a .NET type, and so can carry an assembly.</summary>
+    private static readonly string[] TypeDirectives = ["viewModel", "baseType"];
+
+    /// <summary>
+    /// The assemblies the registrations name. One may be written in full - "App, Version=1.0.0.0,
+    /// Culture=neutral, PublicKeyToken=null" - and only the simple name belongs in a directive.
+    /// </summary>
+    private static IReadOnlyList<DirectiveSuggestion> Assemblies(ControlRegistry registry) =>
+        registry.Registrations
+            .Select(r => r.Assembly)
+            .OfType<string>()
+            .Select(a => a.Split(',')[0].Trim())
+            .Where(a => a.Length > 0)
+            .Distinct(StringComparer.Ordinal)
+            .Select(a => new DirectiveSuggestion(a, "assembly", a))
+            .ToList();
+
+    private static IReadOnlyList<DirectiveSuggestion> SuggestValue(
+        ControlRegistry registry,
+        DirectiveContext context,
+        Func<string, IReadOnlyList<string>>? files) => context.Name switch
     {
         "viewModel" => Types(registry.Types.ViewModels, "view model"),
         "baseType" => Types(registry.Controls.Select(c => c.FullTypeName), "control"),

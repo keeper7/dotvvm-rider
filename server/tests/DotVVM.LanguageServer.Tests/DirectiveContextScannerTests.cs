@@ -37,11 +37,30 @@ public class DirectiveContextScannerTests
     }
 
     [Fact]
-    public void StopsAtTheAssemblyPart()
+    public void ReportsTheAssemblyPartAsSuch()
     {
-        // After the comma comes the assembly, not a type — offering types would be worse
-        // than staying silent
-        Assert.Null(DirectiveContextScanner.Detect("@viewModel App.Vm, App", 0, 22).Name);
+        // After the comma comes the assembly, not a type: the directive is still the one being
+        // written, but what belongs there is a different list
+        var context = DirectiveContextScanner.Detect("@viewModel App.Vm, App", 0, 22);
+
+        Assert.Equal("viewModel", context.Name);
+        Assert.True(context.InAssembly);
+        Assert.Equal("App", context.WrittenValue);
+    }
+
+    [Fact]
+    public void TheTypePartIsNotTheAssemblyPart()
+    {
+        Assert.False(DirectiveContextScanner.Detect("@viewModel App.Vm", 0, 17).InAssembly);
+    }
+
+    [Fact]
+    public void ReportsAnEmptyAssemblyRightAfterTheComma()
+    {
+        var context = DirectiveContextScanner.Detect("@viewModel App.Vm, ", 0, 19);
+
+        Assert.True(context.InAssembly);
+        Assert.Equal("", context.WrittenValue);
     }
 
     [Fact]
