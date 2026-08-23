@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Live validation: the errors a build would report now show while editing - a mistyped property
+  in a binding, an identifier the data context does not have, a value of the wrong type, a
+  control that does not exist. The findings come from DotVVM's own view compiler, run over the
+  file in a separate long-lived process, so the messages are the framework's own rather than a
+  reimplementation of them.
+
+  Saving compiles at once; a change waits half a second for the typing to stop, since a file
+  halfway through a keystroke is not worth compiling. Measured over a real project of 244 views:
+  nothing reported, a median of 13 ms per file and 45 ms at the 90th percentile once warm.
+
+  Projects on DotVVM older than 4.3.0 are not covered - the diagnostics the feature rests on do
+  not exist there - and neither is a project that has never been built.
+
 ## [0.2.1] – 2026-08-23
 
 ### Added
