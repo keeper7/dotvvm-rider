@@ -92,4 +92,42 @@ public class DirectiveValidatorTests
         Assert.Equal(3, issue.Character);
         Assert.Equal("@viewModel".Length, issue.Length);
     }
+
+    [Fact]
+    public void AViewWithoutAViewModelIsAnError()
+    {
+        // DotVVM: "The @viewModel directive is missing in the page 'Test.dothtml'!"
+        var issue = Assert.Single(Validate("<html></html>", "Test.dothtml"));
+
+        Assert.Contains("@viewModel", issue.Message);
+        Assert.Equal(0, issue.Line);        // there is nowhere else to point
+    }
+
+    [Fact]
+    public void AMarkupControlNeedsItToo()
+    {
+        // Verified with the resolver: it holds for .dotcontrol as well, and all 67 markup
+        // controls of the real project have one
+        Assert.Single(Validate("@baseType App.C\n<html></html>", "Test.dotcontrol"));
+    }
+
+    [Fact]
+    public void AMasterPageNeedsItAsWell()
+    {
+        Assert.Single(Validate("<html></html>", "Test.dotmaster"));
+    }
+
+    [Fact]
+    public void AnEmptyFileIsNotWorthComplainingAbout()
+    {
+        // The user has only just created it; underlining its first line is nagging
+        Assert.Empty(Validate("", "Test.dothtml"));
+        Assert.Empty(Validate("   \n\n", "Test.dothtml"));
+    }
+
+    [Fact]
+    public void AFileThatHasOneIsSilent()
+    {
+        Assert.Empty(Validate("@viewModel App.Vm\n<html></html>", "Test.dothtml"));
+    }
 }
