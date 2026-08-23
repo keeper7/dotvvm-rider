@@ -135,4 +135,53 @@ public class DirectiveCompletionTests
         Assert.Empty(DirectiveCompletion.Suggest(
             Registry, new DirectiveContext("js", ""), _ => new[] { "wwwroot/a.js" }));
     }
+
+    [Fact]
+    public void OffersAssembliesAfterTheComma()
+    {
+        var items = DirectiveCompletion.Suggest(
+            Registry, new DirectiveContext("viewModel", "", InAssembly: true));
+
+        Assert.Contains(items, i => i.Label == "App");
+    }
+
+    [Fact]
+    public void StripsTheVersionFromAnAssemblyName()
+    {
+        // A registration may carry the full name — "App, Version=1.0.0.0, Culture=neutral,
+        // PublicKeyToken=null" — and only the simple name belongs in a directive
+        var registry = new ControlRegistry(
+            new[] { new ControlRegistration("cc", "App.Controls",
+                        "App, Version=2026.8.6.0, Culture=neutral, PublicKeyToken=null", null, null) },
+            Array.Empty<ControlInfo>());
+
+        var items = DirectiveCompletion.Suggest(
+            registry, new DirectiveContext("viewModel", "", InAssembly: true));
+
+        Assert.Contains(items, i => i.Label == "App");
+        Assert.DoesNotContain(items, i => i.Label.Contains("Version="));
+    }
+
+    [Fact]
+    public void OffersEachAssemblyOnce()
+    {
+        var registry = new ControlRegistry(
+            new[]
+            {
+                new ControlRegistration("a", "App.One", "App", null, null),
+                new ControlRegistration("b", "App.Two", "App", null, null),
+            },
+            Array.Empty<ControlInfo>());
+
+        Assert.Single(DirectiveCompletion.Suggest(
+            registry, new DirectiveContext("viewModel", "", InAssembly: true)));
+    }
+
+    [Fact]
+    public void OffersNoAssemblyForADirectiveThatTakesNoType()
+    {
+        // @import names a namespace; there is no assembly half to write
+        Assert.Empty(DirectiveCompletion.Suggest(
+            Registry, new DirectiveContext("import", "", InAssembly: true)));
+    }
 }

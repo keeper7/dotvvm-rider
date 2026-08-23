@@ -3,7 +3,13 @@ namespace DotVVM.LanguageServer.Analysis;
 /// <summary>
 /// Where the caret stands in the file header. Name is null unless it is in a directive's value.
 /// </summary>
-public record DirectiveContext(string? Name = null, string WrittenValue = "")
+public record DirectiveContext(
+    string? Name = null,
+    string WrittenValue = "",
+    /// <summary>
+    /// The caret stands after the comma, where an assembly name goes rather than a type.
+    /// </summary>
+    bool InAssembly = false)
 {
     public static readonly DirectiveContext None = new();
 }
@@ -54,7 +60,8 @@ public static class DirectiveContextScanner
         var beforeCaret = content[nameEnd..offset];
 
         // The part after a comma names the assembly, not the type
-        if (beforeCaret.Contains(',')) return DirectiveContext.None;
+        var comma = beforeCaret.LastIndexOf(',');
+        if (comma >= 0) return new DirectiveContext(name, beforeCaret[(comma + 1)..].Trim(), true);
 
         // `@service alias = Type` — a type stands only to the right of the '='
         var equals = beforeCaret.LastIndexOf('=');
