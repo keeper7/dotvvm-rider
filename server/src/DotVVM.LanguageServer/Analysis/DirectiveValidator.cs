@@ -28,6 +28,20 @@ public static class DirectiveValidator
         "noWrapperTag"
     };
 
+    /// <summary>
+    /// The directives that shape a markup control. In a view they are quietly ignored - the
+    /// resolver reports nothing at all - so they are worth a warning: nothing tells the user
+    /// otherwise. @baseType is the exception and is handled as an error, because the framework
+    /// does complain there.
+    /// </summary>
+    private static readonly HashSet<string> MarkupControlOnly = new(StringComparer.Ordinal)
+    {
+        "wrapperTag", "noWrapperTag", "property"
+    };
+
+    /// <summary>A view and a master page have one; a markup control does not.</summary>
+    private const string MasterPageOnly = "masterPage";
+
     public static IReadOnlyList<ValidationIssue> Validate(
         string text, string fileName, ControlRegistry registry)
     {
@@ -51,6 +65,30 @@ public static class DirectiveValidator
             {
                 issues.Add(Issue(directive, DiagnosticLevel.Error,
                     $"Directive '{directive.Name}' cannot be present multiple times."));
+                continue;
+            }
+
+            var isControl = fileName.EndsWith(".dotcontrol", StringComparison.OrdinalIgnoreCase);
+
+            if (MarkupControlOnly.Contains(directive.Name) && !isControl)
+            {
+                issues.Add(Issue(directive, DiagnosticLevel.Warning,
+                    $"'@{directive.Name}' shapes a markup control and has no effect here."));
+                continue;
+            }
+
+            // DotVVM: "Markup controls must derive from DotvvmMarkupControl class!"
+            if (directive.Name == "baseType" && !isControl)
+            {
+                issues.Add(Issue(directive, DiagnosticLevel.Error,
+                    "'@baseType' belongs to a markup control; a view derives from DotvvmView."));
+                continue;
+            }
+
+            if (directive.Name == MasterPageOnly && isControl)
+            {
+                issues.Add(Issue(directive, DiagnosticLevel.Warning,
+                    "'@masterPage' has no effect in a markup control."));
                 continue;
             }
 
