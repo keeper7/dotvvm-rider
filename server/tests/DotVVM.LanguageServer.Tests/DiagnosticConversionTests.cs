@@ -97,3 +97,129 @@ public class DiagnosticConversionTests
         Assert.Equal("a real one", Assert.Single(issues).Message);
     }
 }
+
+/// <summary>
+/// DotVVM reports a wrong identifier twice: on the identifier, and again across the whole
+/// binding as "requirements … were not met". The second underlines from the opening quote and
+/// says nothing more, which is what the user saw.
+/// </summary>
+public class NestedDiagnosticTests
+{
+    private static CompilerDiagnostic At(int startColumn, int endColumn, string message) =>
+        new("Error", message, 8, startColumn, 8, endColumn);
+
+    [Fact]
+    public void KeepsOnlyTheNarrowerOfTwoFindingsInTheSamePlace()
+    {
+        var issues = DiagnosticConversion.ToIssues(new[]
+        {
+            At(31, 36, "Could not resolve identifier 'Namxe'."),
+            At(23, 37, "Could not initialize binding '{value: Namxe}', requirements … were not met."),
+        });
+
+        var kept = Assert.Single(issues);
+        Assert.StartsWith("Could not resolve identifier", kept.Message);
+        Assert.Equal(30, kept.Character);
+        Assert.Equal(35, kept.EndCharacter);
+    }
+
+    [Fact]
+    public void KeepsBothWhenNeitherContainsTheOther()
+    {
+        var issues = DiagnosticConversion.ToIssues(new[]
+        {
+            At(10, 20, "first"),
+            At(30, 40, "second"),
+        });
+
+        Assert.Equal(2, issues.Count);
+    }
+
+    /// <summary>An identical range is a second finding about one place, not a repetition of it.</summary>
+    [Fact]
+    public void KeepsBothWhenTheRangesAreEqual()
+    {
+        var issues = DiagnosticConversion.ToIssues(new[]
+        {
+            At(10, 20, "first"),
+            At(10, 20, "second"),
+        });
+
+        Assert.Equal(2, issues.Count);
+    }
+
+    /// <summary>
+    /// A range sharing one edge still counts as inside - the binding's own start is where the
+    /// summary begins, and the identifier can sit right at it.
+    /// </summary>
+    [Fact]
+    public void CountsARangeSharingOneEdgeAsInside()
+    {
+        var issues = DiagnosticConversion.ToIssues(new[]
+        {
+            At(23, 30, "narrow, starts together"),
+            At(23, 37, "wide"),
+        });
+
+        Assert.Equal("narrow, starts together", Assert.Single(issues).Message);
+    }
+
+    /// <summary>A warning must not silence an error that happens to sit inside it.</summary>
+    [Fact]
+    public void NeverLetsAWarningSilenceAnErrorAroundIt()
+    {
+        var issues = DiagnosticConversion.ToIssues(new[]
+        {
+            new CompilerDiagnostic("Warning", "narrow warning", 8, 31, 8, 36),
+            new CompilerDiagnostic("Error", "wide error", 8, 23, 8, 37),
+        });
+
+        Assert.Equal(2, issues.Count);
+    }
+}
+
+/// <summary>
+/// The summary DotVVM emits beside a real cause sometimes carries exactly the same range, which
+/// nesting cannot tell apart - an unfinished tag produces such a pair.
+/// </summary>
+public class BindingSummaryTests
+{
+    private static CompilerDiagnostic At(int startColumn, int endColumn, string message) =>
+        new("Error", message, 8, startColumn, 8, endColumn);
+
+    private const string Summary =
+        "Could not initialize binding '{value: X}', requirements … were not met.";
+
+    [Fact]
+    public void DropsTheSummaryWhenItShareTheRangeWithTheRealCause()
+    {
+        var issues = DiagnosticConversion.ToIssues(new[]
+        {
+            At(10, 20, "InvalidOperationException: cannot convert char[]"),
+            At(10, 20, Summary),
+        });
+
+        Assert.StartsWith("InvalidOperationException", Assert.Single(issues).Message);
+    }
+
+    /// <summary>Alone it is all the user would get, so it stays.</summary>
+    [Fact]
+    public void KeepsTheSummaryWhenNothingElseCoversThatPlace()
+    {
+        var issues = DiagnosticConversion.ToIssues(new[] { At(10, 20, Summary) });
+
+        Assert.Single(issues);
+    }
+
+    [Fact]
+    public void KeepsTheSummaryWhenTheOtherFindingIsElsewhere()
+    {
+        var issues = DiagnosticConversion.ToIssues(new[]
+        {
+            At(40, 50, "a finding somewhere else"),
+            At(10, 20, Summary),
+        });
+
+        Assert.Equal(2, issues.Count);
+    }
+}
