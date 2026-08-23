@@ -261,4 +261,46 @@ public class DirectiveValidatorTests
         Assert.Empty(DirectiveValidator.Validate(
             "@viewModel A\n@import Some.Other.Library\n<html></html>", "Test.dothtml", registry));
     }
+
+    [Fact]
+    public void AMissingMasterPageIsAnError()
+    {
+        // DotVVM: "File 'A.dotmaster' was not found."
+        var issue = Assert.Single(DirectiveValidator.Validate(
+            "@viewModel A\n@masterPage Views/NoSuch.dotmaster\n<html></html>",
+            "Test.dothtml", ControlRegistry.Empty, exists: _ => false));
+
+        Assert.Contains("NoSuch.dotmaster", issue.Message);
+        Assert.Equal(DiagnosticLevel.Error, issue.Level);
+    }
+
+    [Fact]
+    public void AMasterPageThatIsThereIsFine()
+    {
+        Assert.Empty(DirectiveValidator.Validate(
+            "@viewModel A\n@masterPage Views/Site.dotmaster\n<html></html>",
+            "Test.dothtml", ControlRegistry.Empty, exists: _ => true));
+    }
+
+    [Fact]
+    public void WithNoProjectRootThePathIsNotChecked()
+    {
+        // With no root there is nothing to make the path relative to, and guessing would mean
+        // underlining every file
+        Assert.Empty(DirectiveValidator.Validate(
+            "@viewModel A\n@masterPage Views/Site.dotmaster\n<html></html>",
+            "Test.dothtml", ControlRegistry.Empty));
+    }
+
+    [Fact]
+    public void TheCheckAsksForThePathAsWritten()
+    {
+        string? asked = null;
+        DirectiveValidator.Validate(
+            "@viewModel A\n@masterPage Views/Site.dotmaster\n<html></html>",
+            "Test.dothtml", ControlRegistry.Empty,
+            exists: path => { asked = path; return true; });
+
+        Assert.Equal("Views/Site.dotmaster", asked);
+    }
 }
