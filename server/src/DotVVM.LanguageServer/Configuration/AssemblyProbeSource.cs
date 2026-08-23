@@ -226,9 +226,41 @@ public sealed class AssemblyProbeSource : IConfigurationSource
                 FullTypeName: fullTypeName,
                 BaseType: Str(item, "BaseType"),
                 DefaultContentProperty: Str(item, "DefaultContentProperty"),
-                Properties: ReadProperties(item, "Properties")));
+                Properties: ReadProperties(item, "Properties"),
+                PropertyGroups: ReadGroups(item)));
         }
 
+        return result;
+    }
+
+    /// <summary>
+    /// Reads the property families. Absent from an older probe, which must cost nothing but the
+    /// groups themselves.
+    /// </summary>
+    private static List<ControlPropertyGroup> ReadGroups(JsonElement element)
+    {
+        var result = new List<ControlPropertyGroup>();
+
+        if (!element.TryGetProperty("PropertyGroups", out var array) ||
+            array.ValueKind != JsonValueKind.Array)
+        {
+            return result;
+        }
+
+        foreach (var item in array.EnumerateArray())
+        {
+            var prefix = Str(item, "Prefix");
+            if (string.IsNullOrEmpty(prefix)) continue;
+
+            result.Add(new ControlPropertyGroup(
+                Prefix: prefix,
+                Name: Str(item, "Name") ?? prefix,
+                Usage: Enum.TryParse<PropertyUsage>(Str(item, "Usage"), out var usage)
+                    ? usage : PropertyUsage.Attribute,
+                Value: Enum.TryParse<PropertyValue>(Str(item, "Value"), out var value)
+                    ? value : PropertyValue.Any,
+                TypeName: Str(item, "TypeName")));
+        }
         return result;
     }
 

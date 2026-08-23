@@ -41,15 +41,20 @@
     "DotVVM.Framework.Controls.Repeater": {
       "assembly": "DotVVM.Framework",
       "baseType": "DotVVM.Framework.Controls.ItemsControl, DotVVM.Framework"
+    },
+    "DotVVM.Framework.Controls.ButtonBase": {
+      "assembly": "DotVVM.Framework",
+      "baseType": "DotVVM.Framework.Controls.HtmlGenericControl, DotVVM.Framework"
+    },
+    "DotVVM.Framework.Controls.HtmlGenericControl": {
+      "assembly": "DotVVM.Framework",
+      "baseType": "DotVVM.Framework.Controls.DotvvmControl, DotVVM.Framework"
     }
   },
   "properties": {
     "DotVVM.Framework.Controls.Button": {
       "Text": {
         "type": "System.String"
-      },
-      "Click": {
-        "type": "DotVVM.Framework.Binding.Expressions.Command"
       }
     },
     "MyApp.Controls.Widget": {
@@ -85,9 +90,50 @@
         "onlyHardcoded": true,
         "isAttached": true
       }
+    },
+    "DotVVM.Framework.Controls.ButtonBase": {
+      "Click": {
+        "type": "DotVVM.Framework.Binding.Expressions.Command"
+      }
+    },
+    "DotVVM.Framework.Controls.HtmlGenericControl": {
+      "InnerText": {
+        "type": "System.String"
+      },
+      "Visible": {
+        "type": "System.Boolean"
+      }
     }
   },
-  "propertyGroups": {},
+  "propertyGroups": {
+    "DotVVM.Framework.Controls.HtmlGenericControl": {
+      "Attributes": {
+        "prefixes": [
+          "",
+          "html:"
+        ],
+        "type": "System.Object"
+      },
+      "CssClasses": {
+        "prefix": "Class-",
+        "type": "System.Boolean"
+      },
+      "CssStyles": {
+        "prefix": "Style-",
+        "type": "System.Object"
+      }
+    },
+    "DotVVM.Framework.Controls.Repeater": {
+      "Templates": {
+        "prefixes": [
+          "",
+          "template-"
+        ],
+        "type": "DotVVM.Framework.Controls.ITemplate, DotVVM.Framework",
+        "mappingMode": "InnerElement"
+      }
+    }
+  },
   "capabilities": {},
   "assemblies": {}
 }

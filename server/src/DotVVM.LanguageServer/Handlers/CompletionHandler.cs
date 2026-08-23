@@ -26,6 +26,9 @@ public class CompletionHandler : ICompletionHandler
     /// </summary>
     private bool _snippets;
 
+    private static readonly System.Text.RegularExpressions.Regex Placeholder =
+        new(@"\$\d+", System.Text.RegularExpressions.RegexOptions.Compiled);
+
     public CompletionRegistrationOptions GetRegistrationOptions(
         CompletionCapability capability, ClientCapabilities clientCapabilities)
     {
@@ -117,8 +120,10 @@ public class CompletionHandler : ICompletionHandler
             },
             Detail = suggestion.Detail,
             SortText = suggestion.SortText,
+            // A client without snippet support would take the placeholders literally. A group
+            // uses two of them, so stripping "$0" alone is not enough.
             InsertText = suggestion.IsSnippet && !_snippets
-                ? suggestion.InsertText.Replace("$0", "")
+                ? Placeholder.Replace(suggestion.InsertText, "")
                 : suggestion.InsertText,
             InsertTextFormat = suggestion.IsSnippet && _snippets
                 ? InsertTextFormat.Snippet

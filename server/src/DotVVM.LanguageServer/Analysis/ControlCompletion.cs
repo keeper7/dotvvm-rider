@@ -65,12 +65,41 @@ public static class ControlCompletion
             : registry.GetControl(context.Prefix, context.TagName ?? "")?.Properties.ToArray()
               ?? Array.Empty<ControlProperty>();
 
-        return own.Select(p => (Property: p, Attached: false))
+        var properties = own.Select(p => (Property: p, Attached: false))
             .Concat(registry.AttachedProperties.Select(p => (Property: p, Attached: true)))
             .Where(p => p.Property.IsAttribute && !written.Contains(p.Property.Name))
-            .Select(p => Describe(p.Property, p.Attached, context.EditedAttributeHasValue))
-            .ToList();
+            .Select(p => Describe(p.Property, p.Attached, context.EditedAttributeHasValue));
+
+        // A plain HTML element compiles to HtmlGenericControl and takes its families, so
+        // Class- belongs on a <label> just as much as on a <dot:Label>. Groups are deliberately
+        // not filtered by what is already written: Class-active next to Class-invalid is the
+        // ordinary way to use them.
+        var groups = (context.Prefix is null
+                ? registry.HtmlElementGroups
+                : registry.GetControl(context.Prefix, context.TagName ?? "")?.Groups
+                  ?? Array.Empty<ControlPropertyGroup>())
+            .Where(g => g.IsAttribute)
+            .Select(g => Describe(g, context.EditedAttributeHasValue));
+
+        return properties.Concat(groups).ToList();
     }
+
+    /// <summary>
+    /// A family — Class-, Style-, Param- — offered as the prefix alone. What follows it is the
+    /// author's own word: a CSS class, a style, a route parameter. The snippet therefore leaves
+    /// the caret right after the prefix and puts a second stop inside the value.
+    /// </summary>
+    private static CompletionSuggestion Describe(ControlPropertyGroup group, bool nameOnly) =>
+        new(Label: group.Prefix,
+            Kind: SuggestionKind.Property,
+            InsertText: nameOnly ? group.Prefix : $"{group.Prefix}$1=\"$0\"",
+            IsSnippet: !nameOnly,
+            Detail: group.TypeName is null
+                ? "property group"
+                : $"{group.Name} ({ShortTypeName(group.TypeName)})",
+            // Alongside the control's own properties: Class- is written as often as they are,
+            // and sorting it apart would only hide it
+            SortText: "1" + group.Prefix);
 
     private static CompletionSuggestion Describe(
         ControlProperty property, bool attached, bool nameOnly)

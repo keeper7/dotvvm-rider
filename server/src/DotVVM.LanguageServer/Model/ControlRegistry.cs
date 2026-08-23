@@ -42,6 +42,21 @@ public sealed class ControlRegistry
     /// </summary>
     public ProjectTypes Types { get; }
 
+    /// <summary>
+    /// The property families a plain HTML element accepts. An element written in a view compiles
+    /// to HtmlGenericControl, so it takes whatever that control declares: `Class-required` on a
+    /// &lt;label&gt; is ordinary DotVVM and appears in real projects, though the offer used to
+    /// stop at prefixed tags. Verified against the framework's own resolver, which accepts it.
+    ///
+    /// Empty before a project has been built: tier 1 lists the controls a view writes by name
+    /// and HtmlGenericControl is not one of them.
+    /// </summary>
+    public IReadOnlyList<ControlPropertyGroup> HtmlElementGroups =>
+        _controls.FirstOrDefault(c => c.FullTypeName == HtmlGenericControlType)?.Groups
+        ?? Array.Empty<ControlPropertyGroup>();
+
+    private const string HtmlGenericControlType = "DotVVM.Framework.Controls.HtmlGenericControl";
+
     public IReadOnlyCollection<string> AllPrefixes =>
         _registrations.Select(r => r.TagPrefix).Distinct().ToList();
 
@@ -79,7 +94,18 @@ public sealed class ControlRegistry
     public bool IsMarkupControl(string prefix, string tagName) =>
         MarkupRegistration(prefix, tagName) is not null;
 
+    /// <summary>
+    /// The control behind a tag, with everything it inherits already collected. What
+    /// <see cref="Controls"/> holds is what each source declared; this is what the tag can
+    /// actually be written with.
+    /// </summary>
     public ControlInfo? GetControl(string prefix, string tagName)
+    {
+        var control = FindControl(prefix, tagName);
+        return control is null ? null : Inherited(control);
+    }
+
+    private ControlInfo? FindControl(string prefix, string tagName)
     {
         // A markup control is registered by file, so the namespace lookup below never finds it.
         // Its properties belong to the class named by @baseType, resolved by MarkupControlResolver.
@@ -93,6 +119,46 @@ public sealed class ControlRegistry
         var namespaces = NamespacesFor(prefix).ToHashSet(StringComparer.Ordinal);
         return _controls.FirstOrDefault(c => namespaces.Contains(c.Namespace) && c.TagName == tagName);
     }
+
+    /// <summary>
+    /// Walks the base type chain and collects what the control inherits. The assembly probe
+    /// resolves that itself, but the serialized configuration lists only what each type
+    /// declares: dot:Label holds a single property there — For — while Text, Visible and the
+    /// whole Class- group sit on HtmlGenericControl above it. The nearest declaration wins,
+    /// which is the one that overrides.
+    /// </summary>
+    private ControlInfo Inherited(ControlInfo control)
+    {
+        var properties = new List<ControlProperty>();
+        var groups = new List<ControlPropertyGroup>();
+        var seenProperties = new HashSet<string>(StringComparer.Ordinal);
+        var seenGroups = new HashSet<string>(StringComparer.Ordinal);
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+
+        for (var current = control; current is not null; current = BaseOf(current))
+        {
+            // No real type chain loops, but the registry is merged from three sources and one
+            // wrong entry must not spin here for ever
+            if (!visited.Add(current.FullTypeName)) break;
+
+            foreach (var property in current.Properties)
+            {
+                if (seenProperties.Add(property.Name)) properties.Add(property);
+            }
+
+            foreach (var group in current.Groups)
+            {
+                if (seenGroups.Add(group.Prefix)) groups.Add(group);
+            }
+        }
+
+        return control with { Properties = properties, PropertyGroups = groups };
+    }
+
+    private ControlInfo? BaseOf(ControlInfo control) =>
+        control.BareBaseType is { } name
+            ? _controls.FirstOrDefault(c => c.FullTypeName == name)
+            : null;
 
     private ControlRegistration? MarkupRegistration(string prefix, string tagName) =>
         _registrations.FirstOrDefault(r =>

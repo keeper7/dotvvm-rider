@@ -53,7 +53,7 @@ public sealed class SerializedConfigSource : IConfigurationSource
     {
         var registrations = ParseRegistrations(root);
         var properties = ParseProperties(root);
-        var controls = ParseControls(root, properties.Own);
+        var controls = ParseControls(root, properties.Own, ParsePropertyGroups(root));
         return new ControlRegistry(registrations, controls, properties.Attached);
     }
 
@@ -157,8 +157,81 @@ public sealed class SerializedConfigSource : IConfigurationSource
         element.TryGetProperty(name, out var value) &&
         value.ValueKind == JsonValueKind.True;
 
+    /// <summary>
+    /// Maps a full type name to the property families it declares. The section has the shape
+    /// { "Full.Type.Name": { "GroupName": { "prefix": "Class-", … } } }, with one prefix under
+    /// "prefix" and several under "prefixes" — and it names only the type that declares the
+    /// group, never the ones inheriting it. An empty prefix stands for "any attribute goes"
+    /// and is dropped: there is nothing to offer for it.
+    /// </summary>
+    private static Dictionary<string, List<ControlPropertyGroup>> ParsePropertyGroups(
+        JsonElement root)
+    {
+        var map = new Dictionary<string, List<ControlPropertyGroup>>(StringComparer.Ordinal);
+
+        if (!root.TryGetProperty("propertyGroups", out var owners) ||
+            owners.ValueKind != JsonValueKind.Object)
+        {
+            return map;
+        }
+
+        foreach (var owner in owners.EnumerateObject())
+        {
+            if (owner.Value.ValueKind != JsonValueKind.Object) continue;
+
+            var groups = new List<ControlPropertyGroup>();
+
+            foreach (var group in owner.Value.EnumerateObject())
+            {
+                var usage = GetString(group.Value, "mappingMode") switch
+                {
+                    "InnerElement" => PropertyUsage.InnerElement,
+                    "Both" => PropertyUsage.Both,
+                    "Exclude" => (PropertyUsage?)null,
+                    _ => PropertyUsage.Attribute,
+                };
+                if (usage is null) continue;
+
+                var value = Flag(group.Value, "onlyBindings") ? PropertyValue.BindingOnly
+                          : Flag(group.Value, "onlyHardcoded") ? PropertyValue.HardCodedOnly
+                          : PropertyValue.Any;
+                var typeName = GetString(group.Value, "type");
+
+                foreach (var prefix in Prefixes(group.Value))
+                {
+                    groups.Add(new ControlPropertyGroup(
+                        prefix, group.Name, usage.Value, value, typeName));
+                }
+            }
+
+            if (groups.Count > 0) map[owner.Name] = groups;
+        }
+        return map;
+    }
+
+    private static IEnumerable<string> Prefixes(JsonElement group)
+    {
+        if (GetString(group, "prefix") is { Length: > 0 } single) yield return single;
+
+        if (!group.TryGetProperty("prefixes", out var prefixes) ||
+            prefixes.ValueKind != JsonValueKind.Array)
+        {
+            yield break;
+        }
+
+        foreach (var prefix in prefixes.EnumerateArray())
+        {
+            if (prefix.ValueKind == JsonValueKind.String &&
+                prefix.GetString() is { Length: > 0 } name)
+            {
+                yield return name;
+            }
+        }
+    }
+
     private static List<ControlInfo> ParseControls(
-        JsonElement root, Dictionary<string, List<ControlProperty>> properties)
+        JsonElement root, Dictionary<string, List<ControlProperty>> properties,
+        Dictionary<string, List<ControlPropertyGroup>> groups)
     {
         var result = new List<ControlInfo>();
 
@@ -177,7 +250,10 @@ public sealed class SerializedConfigSource : IConfigurationSource
                 DefaultContentProperty: GetString(entry.Value, "defaultContentProperty"),
                 Properties: properties.TryGetValue(typeName, out var props)
                     ? props
-                    : Array.Empty<ControlProperty>()));
+                    : Array.Empty<ControlProperty>(),
+                PropertyGroups: groups.TryGetValue(typeName, out var own)
+                    ? own
+                    : Array.Empty<ControlPropertyGroup>()));
         }
         return result;
     }
