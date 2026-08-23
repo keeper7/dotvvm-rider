@@ -507,7 +507,9 @@ restarted afterwards — overwriting the plugin underneath a running IDE shuts i
 
 **Closing the sandbox leaves its processes behind.** `JBDevice.framework` daemons outlive the
 IDE that started them: eight were found running at once, the oldest three days old, alongside
-the sandbox's own language server. Both leak the same way and neither is ever reaped, so a few
+the sandbox's own language server — which now drags the view compiler along with it, since that
+is its child and holds a Roslyn of its own. Killing the server does take the compiler down
+(verified), so one `kill` on the orphaned `dotnet` clears both. Both leak the same way and neither is ever reaped, so a few
 rounds of `runRider` quietly cost a good deal of memory. Tell them from the real Rider's by
 their path — the sandbox runs them out of the Gradle cache
 (`transforms/…/riderRD-*/bin/JBDevice.framework/`), the installed IDE out of
