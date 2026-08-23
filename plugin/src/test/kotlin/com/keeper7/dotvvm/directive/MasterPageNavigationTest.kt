@@ -140,4 +140,45 @@ class MasterPageNavigationTest : BasePlatformTestCase() {
 
         assertTrue(targets == null || targets.isEmpty())
     }
+
+    fun testTheAssemblyHalfLeadsToItsProject() {
+        // The two halves of the value lead to different places. Clicking the assembly used to
+        // open the type's source — the one file the reader was demonstrably not asking about.
+        myFixture.addFileToProject("App.csproj", "<Project />")
+        myFixture.addFileToProject(
+            "ViewModels/HomeViewModel.cs", "namespace App.ViewModels;\npublic class HomeViewModel {}")
+        val file = myFixture.configureByText(
+            "Page.dothtml", "@viewModel App.ViewModels.HomeViewModel, App\n<html></html>")
+
+        val offset = file.text.indexOf(", App") + 3
+        val targets = MasterPageNavigationHandler()
+            .getGotoDeclarationTargets(file.findElementAt(offset), offset, myFixture.editor)
+
+        assertEquals("App.csproj", (targets?.singleOrNull() as? PsiFile)?.name)
+    }
+
+    fun testTheTypeHalfStillLeadsToTheSource() {
+        myFixture.addFileToProject("App.csproj", "<Project />")
+        myFixture.addFileToProject(
+            "ViewModels/HomeViewModel.cs", "namespace App.ViewModels;\npublic class HomeViewModel {}")
+        val file = myFixture.configureByText(
+            "Page.dothtml", "@viewModel App.ViewModels.HomeViewModel, App\n<html></html>")
+
+        val offset = file.text.indexOf("HomeViewModel") + 3
+        val targets = MasterPageNavigationHandler()
+            .getGotoDeclarationTargets(file.findElementAt(offset), offset, myFixture.editor)
+
+        assertEquals("HomeViewModel.cs", (targets?.singleOrNull() as? PsiFile)?.name)
+    }
+
+    fun testAnAssemblyWithNoProjectLeadsNowhere() {
+        val file = myFixture.configureByText(
+            "Page.dothtml", "@viewModel App.Vm, SomeNugetPackage\n<html></html>")
+
+        val offset = file.text.indexOf("SomeNugetPackage") + 3
+        val targets = MasterPageNavigationHandler()
+            .getGotoDeclarationTargets(file.findElementAt(offset), offset, myFixture.editor)
+
+        assertTrue(targets == null || targets.isEmpty())
+    }
 }
