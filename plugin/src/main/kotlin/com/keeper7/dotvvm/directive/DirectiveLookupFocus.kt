@@ -1,6 +1,7 @@
 package com.keeper7.dotvvm.directive
 
 import com.intellij.codeInsight.lookup.Lookup
+import com.intellij.codeInsight.lookup.LookupListener
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.keeper7.dotvvm.lang.DotControlFileType
@@ -8,32 +9,41 @@ import com.keeper7.dotvvm.lang.DotHtmlFileType
 import com.keeper7.dotvvm.lang.DotMasterFileType
 
 /**
- * Focuses the popup that opens on `@`, so Tab and Enter insert the directive straight away.
+ * Selects an item in the popup that opens on `@`, so that Tab inserts the directive.
  *
- * An auto-popup the platform is not sure about opens *unfocused*: the item is listed but not
- * selected, and only an arrow key gives it the focus that Tab needs. That default keeps
- * completion out of the way while code is being typed, but a directive name is the only thing
- * that can follow an at sign at the top of a DotVVM file, so there is nothing to get in the way
- * of.
+ * An auto-popup the platform is unsure about opens with **no item selected** — `SEMI_FOCUSED`,
+ * `currentItem == null`. The list is on screen, but Tab has nothing to insert and types a tab
+ * character instead; only an arrow key picks an item. Measured: the focus degree alone changes
+ * nothing, the selection alone is enough.
  *
- * Restricted to the header of a DotVVM file; everywhere else the platform's own judgement stands.
+ * The selection cannot be made when the lookup appears, because it holds no items yet — hence
+ * the listener within a listener. Only an absent selection is filled in, so arrowing away is
+ * never undone. Restricted to the header of a DotVVM file; everywhere else the platform's own
+ * judgement stands.
  */
 class DirectiveLookupFocus : LookupManagerListener {
 
     override fun activeLookupChanged(oldLookup: Lookup?, newLookup: Lookup?) {
         val lookup = newLookup as? LookupImpl ?: return
+        if (!isDirectiveName(lookup)) return
 
-        val file = lookup.psiFile ?: return
+        lookup.addLookupListener(object : LookupListener {
+            override fun uiRefreshed() {
+                if (lookup.currentItem != null) return
+                lookup.currentItem = lookup.items.firstOrNull() ?: return
+            }
+        })
+    }
+
+    private fun isDirectiveName(lookup: LookupImpl): Boolean {
+        val file = lookup.psiFile ?: return false
         val fileType = file.viewProvider.virtualFile.fileType
         if (fileType != DotHtmlFileType.INSTANCE &&
             fileType != DotControlFileType.INSTANCE &&
-            fileType != DotMasterFileType.INSTANCE) return
+            fileType != DotMasterFileType.INSTANCE) return false
 
         val offset = lookup.editor.caretModel.offset
-        if (!DirectiveScanner.isOnName(file.text, offset)) return
-        if (!startsWithAtSign(file.text, offset)) return
-
-        lookup.lookupFocusDegree = com.intellij.codeInsight.lookup.LookupFocusDegree.FOCUSED
+        return DirectiveScanner.isOnName(file.text, offset) && startsWithAtSign(file.text, offset)
     }
 
     /** Whether the word being typed starts with an at sign. */
