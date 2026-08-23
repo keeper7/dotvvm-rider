@@ -1,4 +1,5 @@
 using DotVVM.LanguageServer.Analysis;
+using DotVVM.LanguageServer.Compilation;
 using DotVVM.LanguageServer.Configuration;
 using DotVVM.LanguageServer.Documents;
 using MediatR;
@@ -17,15 +18,18 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
     private readonly ILanguageServerFacade _server;
     private readonly DocumentStore _documents;
     private readonly ProjectConfigurationProvider _configuration;
+    private readonly LiveValidation _live;
 
     public DocumentSyncHandler(
         ILanguageServerFacade server,
         DocumentStore documents,
-        ProjectConfigurationProvider configuration)
+        ProjectConfigurationProvider configuration,
+        LiveValidation live)
     {
         _server = server;
         _documents = documents;
         _configuration = configuration;
+        _live = live;
     }
 
     private static readonly TextDocumentSelector Selector = new(
@@ -48,6 +52,7 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
     {
         _documents.Set(request.TextDocument.Uri.ToString(), request.TextDocument.Text);
         await PublishDiagnosticsAsync(request.TextDocument.Uri, request.TextDocument.Text, ct);
+        ScheduleCompilation(request.TextDocument.Uri, request.TextDocument.Text);
         return Unit.Value;
     }
 
@@ -57,17 +62,34 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
         var text = request.ContentChanges.LastOrDefault()?.Text ?? string.Empty;
         _documents.Set(request.TextDocument.Uri.ToString(), text);
         await PublishDiagnosticsAsync(request.TextDocument.Uri, text, ct);
+        ScheduleCompilation(request.TextDocument.Uri, text);
         return Unit.Value;
     }
 
-    public override Task<Unit> Handle(DidCloseTextDocumentParams request, CancellationToken ct)
+    public override async Task<Unit> Handle(DidCloseTextDocumentParams request, CancellationToken ct)
     {
         _documents.Remove(request.TextDocument.Uri.ToString());
-        return Unit.Task;
+        await _live.ForgetAsync(request.TextDocument.Uri.ToString());
+        return Unit.Value;
     }
 
-    public override Task<Unit> Handle(DidSaveTextDocumentParams request, CancellationToken ct) =>
-        Unit.Task;
+    /// <summary>
+    /// Saving is the author saying the file is finished, so the compiler runs at once rather
+    /// than after the debounce a change gets.
+    /// </summary>
+    public override async Task<Unit> Handle(DidSaveTextDocumentParams request, CancellationToken ct)
+    {
+        var uri = request.TextDocument.Uri;
+        var text = _documents.Get(uri.ToString());
+        if (text is null) return Unit.Value;
+
+        var filePath = uri.GetFileSystemPath();
+        var projectDir = Path.GetDirectoryName(filePath) ?? ".";
+        var compiled = await _live.CompileAsync(projectDir, filePath, text, ct);
+        if (compiled is not null) await PublishAsync(uri, text, compiled, ct);
+
+        return Unit.Value;
+    }
 
     private async Task PublishDiagnosticsAsync(DocumentUri uri, string text, CancellationToken ct)
     {
@@ -100,11 +122,53 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
             })
         });
 
+        Publish(uri, issues, Array.Empty<CompilerIssue>());
+    }
+
+    /// <summary>
+    /// Publishes the structural findings together with what the view compiler said. Both are
+    /// recomputed rather than remembered: the structural pass costs nothing, and one list has to
+    /// go out at a time - a second publish would erase the first.
+    /// </summary>
+    private async Task PublishAsync(
+        DocumentUri uri, string text, IReadOnlyList<CompilerDiagnostic> compiled,
+        CancellationToken ct)
+    {
+        var filePath = uri.GetFileSystemPath();
+        var projectDir = Path.GetDirectoryName(filePath) ?? ".";
+        var configuration = await _configuration.GetAsync(projectDir, ct);
+
+        var issues = TagValidator
+            .Validate(text, configuration.Registry, configuration.KnowsProjectPrefixes)
+            .Concat(DirectiveValidator.Validate(
+                text, filePath, configuration.Registry, MasterPageExists(projectDir)))
+            .ToList();
+
+        Publish(uri, issues, DiagnosticConversion.ToIssues(compiled));
+    }
+
+    private void Publish(
+        DocumentUri uri,
+        IReadOnlyList<ValidationIssue> structural,
+        IReadOnlyList<CompilerIssue> compiled) =>
         _server.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams
         {
             Uri = uri,
-            Diagnostics = new Container<Diagnostic>(issues.Select(ToDiagnostic))
+            Diagnostics = new Container<Diagnostic>(
+                structural.Select(ToDiagnostic).Concat(compiled.Select(ToDiagnostic)))
         });
+
+    /// <summary>
+    /// Asks for a compilation once the typing stops. The result arrives on its own thread, so it
+    /// publishes the whole set again rather than adding to what is already shown.
+    /// </summary>
+    private void ScheduleCompilation(DocumentUri uri, string text)
+    {
+        var filePath = uri.GetFileSystemPath();
+        var projectDir = Path.GetDirectoryName(filePath) ?? ".";
+
+        _live.Schedule(uri.ToString(), projectDir, filePath, text,
+            compiled => PublishAsync(uri, text, compiled, CancellationToken.None));
     }
 
     /// <summary>
@@ -118,6 +182,22 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
 
         return path => File.Exists(Path.Combine(root, path.Replace('/', Path.DirectorySeparatorChar)));
     }
+
+    private static Diagnostic ToDiagnostic(CompilerIssue issue) => new()
+    {
+        Message = issue.Message,
+        Severity = issue.Level switch
+        {
+            DiagnosticLevel.Error => DiagnosticSeverity.Error,
+            DiagnosticLevel.Warning => DiagnosticSeverity.Warning,
+            _ => DiagnosticSeverity.Information
+        },
+        // Named apart from the structural findings, so a reader can tell which pass said what
+        Source = "dotvvm-compiler",
+        Range = new Range(
+            new Position(issue.Line, issue.Character),
+            new Position(issue.EndLine, issue.EndCharacter))
+    };
 
     private static Diagnostic ToDiagnostic(ValidationIssue issue) => new()
     {

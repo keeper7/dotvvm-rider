@@ -66,8 +66,10 @@ tasks.test { useJUnit() }
 
 val serverProjectDir = rootDir.resolve("../server/src/DotVVM.LanguageServer")
 val probeProjectDir = rootDir.resolve("../server/src/DotVVM.LanguageServer.Probe")
+val compilerProjectDir = rootDir.resolve("../server/src/DotVVM.LanguageServer.Compiler")
 val serverOutputDir = layout.buildDirectory.dir("languageServer")
 val probeOutputDir = layout.buildDirectory.dir("languageServerProbe")
+val compilerOutputDir = layout.buildDirectory.dir("languageServerCompiler")
 
 /**
  * Both probe variants have to ship. A net8 host rejects an assembly targeting net9, so the
@@ -105,7 +107,7 @@ val publishProbe by tasks.registering {
 
 probeFrameworks.forEach { tfm ->
     val task = tasks.register<Exec>("publishProbe${tfm.replace(".", "")}") {
-        description = "Publikuje probe proces pro $tfm"
+        description = "Publishes the probe process for $tfm"
         group = "build"
 
         inputs.dir(probeProjectDir)
@@ -123,10 +125,40 @@ probeFrameworks.forEach { tfm ->
     publishProbe { dependsOn(task) }
 }
 
+/**
+ * The view compiler ships the same way and for the same reason as the probe: it runs on the
+ * target project's runtime, which may be newer than the server's.
+ */
+val publishCompiler by tasks.registering {
+    description = "Publishes the view compiler process for every target framework"
+    group = "build"
+}
+
+probeFrameworks.forEach { tfm ->
+    val task = tasks.register<Exec>("publishCompiler${tfm.replace(".", "")}") {
+        description = "Publishes the view compiler process for $tfm"
+        group = "build"
+
+        inputs.dir(compilerProjectDir)
+        outputs.dir(compilerOutputDir.map { it.dir(tfm) })
+
+        commandLine(
+            "dotnet", "publish",
+            compilerProjectDir.absolutePath,
+            "--configuration", "Release",
+            "--framework", tfm,
+            "--output", compilerOutputDir.get().asFile.resolve(tfm).absolutePath,
+            "--no-self-contained"
+        )
+    }
+    publishCompiler { dependsOn(task) }
+}
+
 // Applies to every sandbox (buildPlugin, runIde, runRider), not just the default one;
 // otherwise the server would be missing exactly during manual verification in Rider.
 tasks.withType<PrepareSandboxTask>().configureEach {
-    dependsOn(publishLanguageServer, publishProbe)
+    dependsOn(publishLanguageServer, publishProbe, publishCompiler)
     from(serverOutputDir) { into("${rootProject.name}/server") }
     from(probeOutputDir) { into("${rootProject.name}/server/probe") }
+    from(compilerOutputDir) { into("${rootProject.name}/server/compiler") }
 }

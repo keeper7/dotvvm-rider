@@ -31,7 +31,7 @@ public sealed class AssemblyProbeSource : IConfigurationSource
 
     public async Task<ControlRegistry?> LoadAsync(string projectDir, CancellationToken ct)
     {
-        var assembly = FindProjectAssembly(projectDir);
+        var assembly = ProjectAssembly.Find(projectDir);
         if (assembly is null) return null;
 
         var probe = _fixedProbePath ?? ResolveProbeFor(assembly);
@@ -48,7 +48,7 @@ public sealed class AssemblyProbeSource : IConfigurationSource
     /// </summary>
     private static string? ResolveProbeFor(string targetAssembly)
     {
-        var wanted = ReadTargetFramework(targetAssembly);
+        var wanted = ProjectAssembly.ReadTargetFramework(targetAssembly);
 
         var candidates = ProbeFrameworks
             .Select(tfm => (Tfm: tfm, Path: Path.Combine(ProbeRoot, tfm,
@@ -71,49 +71,6 @@ public sealed class AssemblyProbeSource : IConfigurationSource
         }
 
         return candidates[^1].Path;
-    }
-
-    /// <summary>
-    /// Reads the TFM from the runtimeconfig.json next to the assembly, for example "net9.0".
-    /// Public for testability.
-    /// </summary>
-    public static string? ReadTargetFramework(string assemblyPath)
-    {
-        var config = Path.ChangeExtension(assemblyPath, ".runtimeconfig.json");
-        if (!File.Exists(config)) return null;
-
-        try
-        {
-            using var doc = JsonDocument.Parse(File.ReadAllText(config));
-            return doc.RootElement.TryGetProperty("runtimeOptions", out var options) &&
-                   options.TryGetProperty("tfm", out var tfm) &&
-                   tfm.ValueKind == JsonValueKind.String
-                ? tfm.GetString()
-                : null;
-        }
-        catch (Exception ex) when (ex is JsonException or IOException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>Finds the newest compiled assembly of the project under bin/.</summary>
-    private static string? FindProjectAssembly(string projectDir)
-    {
-        var root = ProjectRoot.Find(projectDir);
-        if (root is null) return null;
-
-        var projectName = Path.GetFileNameWithoutExtension(
-            Directory.EnumerateFiles(root, "*.csproj").FirstOrDefault());
-        if (projectName is null) return null;
-
-        var bin = Path.Combine(root, "bin");
-        if (!Directory.Exists(bin)) return null;
-
-        return Directory
-            .EnumerateFiles(bin, projectName + ".dll", SearchOption.AllDirectories)
-            .OrderByDescending(File.GetLastWriteTimeUtc)
-            .FirstOrDefault();
     }
 
     private async Task<string?> RunProbeAsync(

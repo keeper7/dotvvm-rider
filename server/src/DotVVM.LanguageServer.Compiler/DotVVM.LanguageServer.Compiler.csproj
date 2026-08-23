@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>DotVVM.LanguageServer.Compiler</RootNamespace>
+    <!--
+      Same rule as the probe: the runtime must be at least as new as the target project's, so
+      both variants are published and the server picks one by the target's runtimeconfig.json.
+    -->
+    <TargetFramework></TargetFramework>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <!--
+    Deliberately the OLDEST version that carries DotvvmCompilationDiagnostic - measured over the
+    packages on hand, 4.3.0 has it and 4.2.0 does not. The process runs with the target
+    application's deps.json, so the DotVVM it actually loads is the target's; a reference newer
+    than that would fail to resolve, while an older one rolls forward. Measured: a build against
+    4.3.6 runs against an application on 4.3.17, and one against 4.3.17 does not run against
+    4.3.6 at all.
+  -->
+  <ItemGroup>
+    <PackageReference Include="DotVVM" Version="4.3.17" />
+  </ItemGroup>
+
+  <!-- Web application types reference Microsoft.AspNetCore.*, which lives in the shared framework -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

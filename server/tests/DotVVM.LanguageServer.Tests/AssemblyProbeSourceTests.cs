@@ -252,7 +252,7 @@ public class AssemblyProbeSourceTests
                 "\",\"framework\":{\"name\":\"Microsoft.NETCore.App\",\"version\":\"" +
                 frameworkVersion + "\"}}}");
 
-            var tfm = AssemblyProbeSource.ReadTargetFramework(Path.Combine(dir, "App.dll"));
+            var tfm = ProjectAssembly.ReadTargetFramework(Path.Combine(dir, "App.dll"));
             Assert.Equal(expectedFolder, tfm);
         }
         finally { Directory.Delete(dir, recursive: true); }
@@ -261,7 +261,7 @@ public class AssemblyProbeSourceTests
     [Fact]
     public void FallsBackWhenRuntimeConfigMissing()
     {
-        Assert.Null(AssemblyProbeSource.ReadTargetFramework("/nonexistent/App.dll"));
+        Assert.Null(ProjectAssembly.ReadTargetFramework("/nonexistent/App.dll"));
     }
 
     /// <summary>
