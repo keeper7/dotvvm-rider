@@ -20,11 +20,14 @@ internal static class Session
     public static int Run(string assemblyPath, string projectDir)
     {
         ViewCompilation compilation;
+        MemberCompletion completion;
         try
         {
             var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(
                 Path.GetFullPath(assemblyPath));
-            compilation = new ViewCompilation(BuildConfiguration(assembly, projectDir));
+            var configuration = BuildConfiguration(assembly, projectDir);
+            compilation = new ViewCompilation(configuration);
+            completion = new MemberCompletion(configuration);
         }
         catch (Exception ex)
         {
@@ -33,7 +36,7 @@ internal static class Session
         }
 
         WarmUp(compilation);
-        Serve(compilation);
+        Serve(compilation, completion);
         return 0;
     }
 
@@ -59,7 +62,7 @@ internal static class Session
     }
 
     /// <summary>One request per line in, one response per line out; the text is JSON-escaped.</summary>
-    private static void Serve(ViewCompilation compilation)
+    private static void Serve(ViewCompilation compilation, MemberCompletion completion)
     {
         while (Console.In.ReadLine() is { } line)
         {
@@ -72,8 +75,14 @@ internal static class Session
                 request = JsonSerializer.Deserialize(line, ProtocolContext.Default.CompileRequest);
                 if (request is null) continue;
 
-                response = new CompileResponse(
-                    request.Id, compilation.Compile(request.Path, request.Text).ToList());
+                response = request.Kind == Kinds.Complete
+                    ? new CompileResponse(
+                        request.Id,
+                        new List<CompileDiagnostic>(),
+                        completion.Complete(request.Path, request.Text, request.Offset,
+                                            request.Expression, request.Binding).ToList())
+                    : new CompileResponse(
+                        request.Id, compilation.Compile(request.Path, request.Text).ToList());
             }
             catch (Exception ex)
             {
@@ -81,7 +90,7 @@ internal static class Session
                 // user's own converters and validators run here. One bad file must not end the
                 // process, or every later request would go unanswered.
                 response = new CompileResponse(
-                    request?.Id ?? 0, new List<CompileDiagnostic>(),
+                    request?.Id ?? 0, new List<CompileDiagnostic>(), null,
                     $"{ex.GetType().Name}: {ex.Message}");
             }
 

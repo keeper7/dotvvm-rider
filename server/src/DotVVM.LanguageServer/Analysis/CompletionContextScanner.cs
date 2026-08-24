@@ -36,7 +36,7 @@ public static class CompletionContextScanner
 
     public static CompletionContext Detect(string text, int line, int character)
     {
-        var offset = OffsetOf(text, line, character);
+        var offset = TextPosition.OffsetOf(text, line, character);
         var i = 0;
 
         while (i < offset)
@@ -62,22 +62,6 @@ public static class CompletionContextScanner
         }
 
         return CompletionContext.None;
-    }
-
-    /// <summary>
-    /// The LSP position converted to an index. A character index counts within the line, so a
-    /// trailing carriage return never gets in the way.
-    /// </summary>
-    private static int OffsetOf(string text, int line, int character)
-    {
-        var offset = 0;
-        for (var seen = 0; seen < line; seen++)
-        {
-            var next = text.IndexOf('\n', offset);
-            if (next < 0) return text.Length;
-            offset = next + 1;
-        }
-        return Math.Min(offset + character, text.Length);
     }
 
     private static CompletionContext InsideTag(string text, int start, int offset)

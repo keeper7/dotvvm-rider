@@ -4,10 +4,15 @@ using DotVVM.LanguageServer.Configuration;
 namespace DotVVM.LanguageServer.Compilation;
 
 /// <summary>
-/// Decides *when* the view compiler runs. Compiling costs milliseconds once warm, but a file
-/// halfway through a keystroke is not worth compiling at all: an unfinished tag alone yields
-/// three complaints, one of them about the end of the file. So a change waits for the typing to
-/// stop, while saving is taken as the author saying the file is finished.
+/// Decides *when* the view compiler runs, and owns the process it runs in - one per project.
+///
+/// Compiling costs milliseconds once warm, but a file halfway through a keystroke is not worth
+/// compiling at all: an unfinished tag alone yields three complaints, one of them about the end
+/// of the file. So a change waits for the typing to stop, while saving is taken as the author
+/// saying the file is finished.
+///
+/// Completion inside a binding borrows the same process, since it needs the same two things
+/// nothing else has: DotVVM itself and the project's own assembly.
 /// </summary>
 public sealed class LiveValidation : IAsyncDisposable
 {
@@ -96,6 +101,44 @@ public sealed class LiveValidation : IAsyncDisposable
         return compiler.Available
             ? compiler.CompileAsync(path, text, ct)
             : Task.FromResult<IReadOnlyList<CompilerDiagnostic>?>(null);
+    }
+
+    /// <summary>
+    /// Brings the compiler up for a project a file has just been opened from. Nothing waits for
+    /// it: the point is that the first completion inside a binding finds it already running,
+    /// rather than paying for the start itself and answering after the popup has given up.
+    /// </summary>
+    public void Warm(string projectDir)
+    {
+        if (!_enabled) return;
+
+        var root = ProjectRoot.Find(projectDir) ?? projectDir;
+        var compiler = _compilers.GetOrAdd(root, dir => new CompilerProcess(dir));
+
+        _ = Task.Run(async () =>
+        {
+            try { await compiler.WarmAsync(CancellationToken.None); }
+            catch (Exception ex) { await Console.Error.WriteLineAsync($"[dotvvm-ls] warm-up: {ex.Message}"); }
+        });
+    }
+
+    /// <summary>
+    /// What may be written inside a binding at that offset. Off with the same variable as the
+    /// validation: what the switch is really about is the process running the project's own
+    /// code, and this is the same process.
+    /// </summary>
+    public Task<IReadOnlyList<CompilerCompletionItem>?> CompleteAsync(
+        string projectDir, string path, string text, int offset, string expression,
+        string binding, CancellationToken ct)
+    {
+        if (!_enabled) return Task.FromResult<IReadOnlyList<CompilerCompletionItem>?>(null);
+
+        var root = ProjectRoot.Find(projectDir) ?? projectDir;
+        var compiler = _compilers.GetOrAdd(root, dir => new CompilerProcess(dir));
+
+        return compiler.Available
+            ? compiler.CompleteAsync(path, text, offset, expression, binding, ct)
+            : Task.FromResult<IReadOnlyList<CompilerCompletionItem>?>(null);
     }
 
     /// <summary>Stops waiting on a file nobody is editing any more.</summary>

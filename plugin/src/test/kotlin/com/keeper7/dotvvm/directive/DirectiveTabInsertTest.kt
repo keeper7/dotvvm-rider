@@ -67,7 +67,7 @@ class DirectiveTabInsertTest : CompletionAutoPopupTestCase() {
         type("@masterPage Vi")
 
         assertTrue("the caret must count as being in the header", onEdt {
-            DirectiveLookupFocus().isInHeader(myFixture.file, myFixture.editor.caretModel.offset)
+            com.keeper7.dotvvm.ide.DotvvmLookupFocus().isInHeader(myFixture.file, myFixture.editor.caretModel.offset)
         })
     }
 
@@ -75,7 +75,7 @@ class DirectiveTabInsertTest : CompletionAutoPopupTestCase() {
         myFixture.configureByText("F.dothtml", "@viewModel A\n<html><div <caret>></div></html>")
 
         assertFalse(onEdt {
-            DirectiveLookupFocus().isInHeader(myFixture.file, myFixture.editor.caretModel.offset)
+            com.keeper7.dotvvm.ide.DotvvmLookupFocus().isInHeader(myFixture.file, myFixture.editor.caretModel.offset)
         })
     }
 }

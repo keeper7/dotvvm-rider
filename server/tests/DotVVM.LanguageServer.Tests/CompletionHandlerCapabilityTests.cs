@@ -1,3 +1,4 @@
+using DotVVM.LanguageServer.Compilation;
 using DotVVM.LanguageServer.Configuration;
 using DotVVM.LanguageServer.Documents;
 using DotVVM.LanguageServer.Handlers;
@@ -17,7 +18,7 @@ public class CompletionHandlerCapabilityTests
     public void RegistrationSurvivesAClientWithoutCompletion()
     {
         var handler = new CompletionHandler(
-            new DocumentStore(), ProjectConfigurationProvider.CreateDefault());
+            new DocumentStore(), ProjectConfigurationProvider.CreateDefault(), new LiveValidation());
 
         var options = handler.GetRegistrationOptions(null!, new ClientCapabilities());
 
@@ -28,7 +29,7 @@ public class CompletionHandlerCapabilityTests
     public void RegistrationReadsSnippetSupportWhenItIsThere()
     {
         var handler = new CompletionHandler(
-            new DocumentStore(), ProjectConfigurationProvider.CreateDefault());
+            new DocumentStore(), ProjectConfigurationProvider.CreateDefault(), new LiveValidation());
 
         var capability = new CompletionCapability
         {

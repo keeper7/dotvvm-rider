@@ -3,7 +3,7 @@ using DotVVM.LanguageServer.Model;
 namespace DotVVM.LanguageServer.Analysis;
 
 /// <summary>What kind of thing a suggestion is, so the handler can pick an LSP item kind.</summary>
-public enum SuggestionKind { Prefix, Tag, Property }
+public enum SuggestionKind { Prefix, Tag, Property, Binding }
 
 /// <summary>
 /// One completion suggestion, free of protocol types. InsertText carries a $0 placeholder when
