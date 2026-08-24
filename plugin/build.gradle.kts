@@ -51,6 +51,27 @@ intellijPlatform {
             untilBuild = "262.*"
         }
     }
+
+    /**
+     * Where `publishPlugin` gets its credentials.
+     *
+     * The token belongs to the whole Marketplace account, not to one plugin, so it is a
+     * credential in the full sense and **must not reach this repository** - which is public.
+     * `plugin/gradle.properties` is tracked and therefore exactly the wrong place, however much
+     * it looks like the right one.
+     *
+     * The environment variable comes first because a value passed for one command leaves
+     * nothing behind; `~/.gradle/gradle.properties` is the standing alternative, outside the
+     * repository. With neither set the task fails when it runs, not when the build is
+     * configured, so everything else still works on a machine that will never publish.
+     *
+     * A brand-new plugin cannot be uploaded this way at all: the task updates a plugin that
+     * already exists, and the first upload goes through the web form.
+     */
+    publishing {
+        token = providers.environmentVariable("JETBRAINS_MARKETPLACE_TOKEN")
+            .orElse(providers.gradleProperty("marketplaceToken"))
+    }
 }
 
 // Manual verification in the target IDE: ./gradlew runRider
