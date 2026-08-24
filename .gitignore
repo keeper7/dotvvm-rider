@@ -10,6 +10,9 @@ output
 [Bb]in/
 [Oo]bj/
 
+# macOS
+.DS_Store
+
 # IDEs
 /.idea/*.iml
 /.idea/*.xml
@@ -17,5 +20,8 @@ output
 /.idea/.idea.*/.idea/*.xml
 *.cache
 
+# Kept out of the published repository on purpose: the guidance Claude Code reads, the
+# working notes beside it, and settings belonging to one machine
+/CLAUDE.md
 /.private
 /.claude/settings.local.json
