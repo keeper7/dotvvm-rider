@@ -4,7 +4,6 @@ import com.intellij.codeInsight.completion.CompletionContributor
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.lookup.LookupElementBuilder
-import com.intellij.psi.PsiElement
 import com.keeper7.dotvvm.ide.MarkupCompletion
 import com.keeper7.dotvvm.lang.DotControlFileType
 import com.keeper7.dotvvm.lang.DotHtmlFileType
@@ -58,22 +57,6 @@ class DirectiveCompletionContributor : CompletionContributor() {
         }
     }
 
-    /**
-     * Opens the popup as soon as `@` is typed, without waiting for another character;
-     * otherwise completion would only start from the second letter.
-     */
-    override fun invokeAutoPopup(position: PsiElement, typeChar: Char): Boolean {
-        if (typeChar != '@') return false
-
-        val file = position.containingFile ?: return false
-        val fileType = file.virtualFile?.fileType
-        if (fileType != DotHtmlFileType.INSTANCE &&
-            fileType != DotControlFileType.INSTANCE &&
-            fileType != DotMasterFileType.INSTANCE) return false
-
-        return isInDirectiveArea(file.text, position.textRange.endOffset)
-    }
-
     /** Whether the word being typed starts with an at sign. */
     private fun startsWithAtSign(text: String, offset: Int): Boolean {
         var i = offset.coerceIn(0, text.length)
@@ -81,12 +64,16 @@ class DirectiveCompletionContributor : CompletionContributor() {
         return i > 0 && text[i - 1] == '@'
     }
 
-    /**
-     * Directives live only in the file header. The position is judged by whether the document
-     * body has already started: after the first tag or DOCTYPE there can be no directive.
-     */
-    private fun isInDirectiveArea(text: String, offset: Int): Boolean {
-        val before = text.take(offset)
-        return before.lineSequence().none { it.trimStart().startsWith('<') }
-    }
+}
+
+/**
+ * Directives live only in the file header. The position is judged by whether the document
+ * body has already started: after the first tag or DOCTYPE there can be no directive.
+ *
+ * Shared with [DotvvmAutoPopup][com.keeper7.dotvvm.ide.DotvvmAutoPopup], which asks the same
+ * question when deciding whether the at sign should open the popup.
+ */
+internal fun isInDirectiveArea(text: String, offset: Int): Boolean {
+    val before = text.take(offset)
+    return before.lineSequence().none { it.trimStart().startsWith('<') }
 }
