@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The plugin no longer reaches for API the platform keeps to itself. Marketplace's verifier
+  reported one internal call and two deprecated ones against 0.4.0: the bundled server was
+  located through `PluginManagerCore.getPlugin`, which is internal, and the completion popup was
+  opened from `CompletionContributor.invokeAutoPopup`, which is deprecated. The server is now
+  found through `PluginPathManager` and the popup opened by a typed handler — the same extension
+  point that already writes a binding's closing braces. Nothing changes for the reader; it is
+  what keeps the plugin loading on the next IDE.
+
 ## [0.4.0] – 2026-08-24
 
 ### Added

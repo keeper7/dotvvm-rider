@@ -124,6 +124,11 @@
     <!-- Writes the closing braces of a binding that has just been opened -->
     <typedHandler implementation="com.keeper7.dotvvm.binding.BindingBraceHandler"/>
 
+    <!-- Opens the popup on @ and on the brace. Declared after the one above, which is the order
+         they run in: the caret only stands inside a binding once the closing braces are there.
+         This replaces CompletionContributor.invokeAutoPopup, which the platform deprecated. -->
+    <typedHandler implementation="com.keeper7.dotvvm.ide.DotvvmAutoPopup"/>
+
     <highlightErrorFilter
         implementation="com.keeper7.dotvvm.directive.DirectiveErrorFilter"/>
 
