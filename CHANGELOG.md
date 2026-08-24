@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Completion inside a binding expression. An opening brace offers the kinds of binding a file
+  may use - `value:`, `command:`, `staticCommand:`, `resource:`, and the two control bindings in
+  a `.dotcontrol`. After the colon come the members of the data context, which follows the view:
+  inside an `ItemTemplate` it is the item, with `_parent`, `_index` and `_collection` beside it.
+  A dot walks into whatever the expression evaluates to, however long the chain -
+  `Customer.Address.City`, `Items[0].Name`, `Name.ToUpper()`.
+
+  Which methods are offered depends on the kind of binding, measured against the framework
+  rather than assumed: a `value` and a `staticCommand` reach the browser and take only what
+  DotVVM can translate to JavaScript, while a `resource` and a `command` are evaluated on the
+  server and take any method the type has - the view model's own included, which is what a
+  command binding is usually for.
+
+  A path may also begin with a class rather than with a value, `{resource: Fields.Title}` among
+  them; the namespaces a project registers in `DotvvmStartup` count as much as a file's own
+  `@import`. Measured over a real project of 245 views: of 10694 places where an expression
+  begins and 8303 where a member follows a dot, none is left without an answer, at a median of
+  8 ms and 30 ms at the 90th percentile. On a file mid-keystroke, with the binding at the caret
+  still unfinished, 697 of 705 are answered.
+
+  Typing `{{` writes the closing `}}` for you, unless something already closes the binding. What
+  the editor offers inside a binding is kept to what may be written there: no HTML tags, and no
+  Emmet abbreviations - `{{f` used to fill the list with `fieldset:d` and `form`. The file's
+  header is kept clear of both as well.
+
+  It needs a project that has been built, the same as live validation and through the same
+  process - so `DOTVVM_LS_LIVE_VALIDATION=off` switches this off as well.
+
 ## [0.3.0] – 2026-08-23
 
 ### Added

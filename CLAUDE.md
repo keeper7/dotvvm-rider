@@ -34,7 +34,7 @@ All Gradle commands run from `plugin/`, which is a standalone Gradle project wit
 ```bash
 cd plugin
 ./gradlew buildPlugin                    # Full build — also re-zips the bundled server
-./gradlew test                           # All tests (153; the server has 272 of its own)
+./gradlew test                           # All tests (198; the server has 311 of its own)
 ./gradlew test --tests "*ScannerTest*"   # Single test class
 ./gradlew runRider                       # Debug in a sandbox Rider — the target IDE
 ./gradlew runIde                         # Sandbox IDEA Ultimate (the compile platform)
@@ -56,7 +56,8 @@ the reported code belongs to `echo`, not to the build.
 - `plugin/src/main/resources/META-INF/plugin.xml` — plugin descriptor
 - `server/src/DotVVM.LanguageServer/` — LSP server: `Model/`, `Configuration/`, `Analysis/`, `Handlers/`
 - `server/src/DotVVM.LanguageServer.Probe/` — loads the project assembly in its own process
-- `server/src/DotVVM.LanguageServer.Compiler/` — runs DotVVM's own view compiler, long-lived
+- `server/src/DotVVM.LanguageServer.Compiler/` — runs DotVVM's own view compiler, long-lived;
+  it also answers what a binding's expression may name, which needs the same two things
 - `fixtures/SampleApp/` — sample DotVVM app for manual and integration testing; it is a real
   buildable app, because the probe needs a built assembly and go-to-definition needs a `.csproj`.
   `SiteMaster.dotmaster` and `Address.dotcontrol` are written for this fixture, and their
@@ -438,6 +439,121 @@ There is no setting in the IDE for it yet — that is the piece still missing.
 The child process ends on its own when the server dies: its `Console.In.ReadLine()` returns null
 once the pipe closes. Verified with `kill -9` on the server — no process left behind, unlike the
 `dotnet` processes the tests used to leak.
+
+## Completion inside a binding
+
+Which members a binding may name is a question only the compiler process can answer - it alone
+holds DotVVM and the project's assembly - so it takes a **second kind of request** beside
+`compile`, and `LiveValidation` owns the process for both. The same switch covers them:
+`DOTVVM_LS_LIVE_VALIDATION=off` leaves the binding without completion, since what the switch is
+really about is the process that runs the user's own code.
+
+`BindingContextScanner` decides only what can be read off the text - that the caret is inside a
+binding, which kind is being written and what member access stands to its left - and it splits
+that access from the word being typed. Everything textual therefore stays on the server, where
+plain xUnit reaches it; the compiler process only resolves types. It walks forward like
+`CompletionContextScanner` and for the same reasons, and skips `<script>` and `<style>`, whose
+braces are ordinary punctuation.
+
+**The platform does ask an LSP server inside an injected fragment.** This looked like the plan's
+biggest risk, since a binding runs as `DotVVMBinding` rather than HTML and directives had needed
+plugin-side work. Reading the platform's own code settles it: `LspCompletionContributor` and
+`LspAutoPopupTypedHandler` both unwrap a `VirtualFileWindow` to its delegate and translate the
+offset with `injectedToHost`, so the server is asked about the host file at the host position.
+Nothing in the plugin had to change - `{` and `.` are declared as trigger characters by the
+server, and `isTriggerCharacterRespected` was already answering yes.
+
+**Which methods may be offered depends on the kind of binding.** Measured, not assumed:
+
+```
+{value: Name.Substring(1)}      rejected    {command: Name.Substring(1)}        compiles
+{resource: Name.Substring(1)}   compiles    {staticCommand: Name.Substring(1)}  rejected
+{command: Save()}               compiles    {staticCommand: Save()}             rejected
+```
+
+A resource and a command are evaluated on the server and take any method; a value and a static
+command reach the browser and take only what `JavascriptTranslatableMethodCollection` can
+translate. A static command also takes a method carrying `[AllowStaticCommand]`, which the
+framework reports - misleadingly - as one that cannot be translated. Filtering all four alike,
+as the plan had it, would have hidden the view model's own methods in a command binding, which
+is what a command binding is *for*. **Properties are not filtered at all**: hiding a real member
+looks broken, while offering one that does not compile is caught by live validation a moment
+later. LINQ over a string is offered because DotVVM compiles it - checked, `{value: Name.Any()}`
+passes.
+
+**A path often begins with a class, and the namespaces come from the configuration.** Measured
+over a real project: of 8303 places where a member follows a dot, 2775 begin with a resource
+class - `{resource: Fields.Title}` - and **no file imports it by name**. They come from
+`config.Markup.ImportedNamespaces`, filled by `DotvvmStartup`, which the data context stack does
+not carry; passing them in took the misses from 2775 to 6. The namespace of the data context
+type is in scope as well: `Item.Nonexistent` fails on the member, not on the type. What a bare
+name means is asked of `TypeRegistry.Default`, the framework's own registry, so the C# aliases
+and `System` need no list of ours.
+
+`_parent0` is the **current** context and `_parent1` the one above it - the number counts levels,
+not parents - so only `_parent2` upwards is worth offering beside `_this` and `_parent`.
+
+Calibrated the way the validators were, over a real project of 245 views: 10694 places where an
+expression begins and 8303 where a member follows a dot, **none of them left without an answer**,
+at a median of 8 ms and 30 ms at the 90th percentile. On a file mid-keystroke - the binding at
+the caret cut short - 697 of 705 still answer, because `ResolveTree` writes its complaints onto
+the nodes and builds the tree anyway. A misspelt path offers nothing rather than falling back to
+the data context, which would answer a question nobody asked.
+
+The compiler process has no test project - it needs DotVVM and a built application - so what it
+does is measured by driving its line protocol directly, the way the numbers above were taken.
+
+**A path that begins with a class is the common case, not the exception**, so those classes are
+offered where an expression begins - and finding them cost three traps in a row. The namespaces
+are the file's `@import` plus `config.Markup.ImportedNamespaces`; the types in them come from
+`CompiledAssemblyCache.GetAllAssemblies()` and **not** `GetReferencedAssemblies()`, which holds
+18 assemblies against 372 on a real project and not the one with the resource classes in it.
+Neither visibility nor `[CompilerGenerated]` may be filtered on: a .resx generates its class as
+`internal` and marks it compiler generated, so both filters hid exactly `Fields` and `Buttons` -
+the same trap as filtering view models by `IsPublic`. From a System or Microsoft assembly only
+public types are offered, or `ThrowHelper` and `SystemCore_EnumerableDebugView` join the list
+through `System.Linq`, which every view imports. Reading them is one walk over every loaded
+assembly, so it is primed in the background at start-up rather than paid for by the first popup.
+
+## Completion in the editor
+
+The offer being right is half of it; the popup behaving is the other, and none of it shows in a
+green suite. Three things had to be settled by watching the editor:
+
+**The kinds are the plugin's, the members the server's** - the same split as directive names
+against directive values. `BindingCompletionContributor` offers `value:`, `command:` and the
+rest at once, without waiting for a round trip, and drops the server's copies of them so the
+list holds each once. It also **drops the platform's markup** while the caret is in a binding:
+none of it is valid there, and it came first, pushing the kinds below the fold whenever the
+server's items arrived a moment later.
+
+**Markup arrives in two shapes and only one of them looks like markup.** A tag is recognised by
+its lookup string, which starts with `<`. Emmet's abbreviations are **live templates** named
+`fieldset:d`, `form`, `fig`, so one letter typed inside `{{` filled the list with them while the
+tag filter stood by. `MarkupCompletion` therefore judges the element as well - anything that is
+a `LiveTemplateLookupElement`, decorators unwrapped - and both the binding and the header use
+it, the header having had the same hole. Emmet is **absent from the test platform** (measured: a
+plain `<div>f` there offers `<form` and the tags and no abbreviation), so what the predicate
+makes of a live template is tested on one built by hand, and the tag half carries a control test
+so that a green pair cannot mean "the platform offered nothing here".
+
+**Tab reached Emmet.** `{{re` + Tab produced `<re></re>` rather than `resource:` - the popup was
+open with nothing selected, exactly the failure `@masterPage Vi` had. `DotvvmLookupFocus` (which
+was `DirectiveLookupFocus`) now fills in the missing selection in both places. Test it through
+`CompletionAutoPopupTestCase`; with `completeBasic` an item is always selected and the bug is
+invisible.
+
+**A finished binding is injected, one being typed is not.** Measured: the language at the caret
+in `{{resource: |}}` is `DotVVMBinding`, and in `{{re|` it is `DotVVM`. Contributors are looked
+up by that language, so the contributor is registered **twice** - `DotVVM` reaches an
+XML registration through its base language chain, while `DotVVMBinding` has no base language at
+all and reaches nothing. `BindingLocation` undoes the injection before reading any text, the way
+the platform's own LSP contributor does.
+
+`BindingBraceHandler` writes the closing `}}` as soon as `{{` is typed, since the platform closes
+brackets only for languages it knows and a brace in HTML is ordinary text. `ClosingBraces`
+refuses wherever anything already closes the binding - a `}` of any kind ahead of the caret, a
+third brace - because getting that wrong is worse than not doing it at all.
 
 ## The LSP client at run time
 
