@@ -640,6 +640,15 @@ Refreshing it needs `prepareSandbox_runRider`, not `prepareSandbox`: the latter 
 *default* sandbox and leaves the running one untouched. Either way the sandbox has to be
 restarted afterwards — overwriting the plugin underneath a running IDE shuts it down.
 
+**A file rewritten on disk under a running IDE leaves the old file's diagnostics on screen.**
+Rider restores the tabs it had open from a cache of its own, so a background tab can be handed
+to the LSP client with yesterday's content; the server compiles what it is given and publishes
+findings that belong to text nobody can see any more. Activating the tab refreshes it from disk
+without forcing another compilation, so the underlines stay - measured on a rewritten fixture,
+where the errors named members the new file does not have. The compiler's own cache is not the
+cause: sending it the old and the new text in turn gives the old errors and then a clean answer,
+every time. Reopening the file clears it. Edit fixtures before starting the sandbox, not under it.
+
 **Closing the sandbox leaves its processes behind.** `JBDevice.framework` daemons outlive the
 IDE that started them: eight were found running at once, the oldest three days old, alongside
 the sandbox's own language server — which now drags the view compiler along with it, since that
