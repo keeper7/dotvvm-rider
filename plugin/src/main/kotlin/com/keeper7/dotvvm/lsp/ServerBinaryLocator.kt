@@ -10,14 +10,21 @@ import java.nio.file.Path
  */
 object ServerBinaryLocator {
 
-    private const val SERVER_DIR = "server"
-    private const val SERVER_DLL = "DotVVM.LanguageServer.dll"
     private const val DOTNET = "dotnet"
 
-    fun findServerDll(pluginRoot: Path): Path? {
-        val candidate = pluginRoot.resolve(SERVER_DIR).resolve(SERVER_DLL)
-        return if (Files.isRegularFile(candidate)) candidate else null
-    }
+    /**
+     * Where the server sits inside the plugin's own distribution.
+     *
+     * Named rather than composed on the spot because the plugin no longer resolves it against a
+     * root of its own: the platform hands out that root, and `PluginManagerCore.getPlugin` -
+     * which used to ask for it - is internal API, reported as such by Marketplace's verifier.
+     */
+    const val SERVER_PATH = "server/DotVVM.LanguageServer.dll"
+
+    /** The candidate, or null when the distribution carries no server there. */
+    fun existing(candidate: Path): Path? = if (Files.isRegularFile(candidate)) candidate else null
+
+    fun findServerDll(pluginRoot: Path): Path? = existing(pluginRoot.resolve(SERVER_PATH))
 
     /**
      * Directories that hold a .NET runtime, in the order they should be searched.
