@@ -15,7 +15,7 @@ public sealed class AssemblyProbeSource : IConfigurationSource
     private readonly TimeSpan _timeout;
 
     /// <summary>Probe variants, oldest first; a newer runtime also loads an older assembly.</summary>
-    private static readonly string[] ProbeFrameworks = { "net8.0", "net9.0" };
+    private static readonly string[] ProbeFrameworks = { "net8.0", "net9.0", "net10.0" };
 
     public AssemblyProbeSource(string? probePath = null, TimeSpan? timeout = null)
     {

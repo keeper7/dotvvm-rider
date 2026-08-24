@@ -7,7 +7,7 @@ namespace DotVVM.LanguageServer.Compilation;
 public static class CompilerBinary
 {
     /// <summary>Variants, oldest first; a newer runtime also loads an older assembly.</summary>
-    public static readonly string[] Frameworks = { "net8.0", "net9.0" };
+    public static readonly string[] Frameworks = { "net8.0", "net9.0", "net10.0" };
 
     public const string FileName = "DotVVM.LanguageServer.Compiler.dll";
 

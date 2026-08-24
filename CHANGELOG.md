@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Projects targeting **.NET 10** are supported. The probe and the view compiler ship a variant
+  per framework and only `net8.0` and `net9.0` existed, so on a newer project the probe found no
+  variant it could run: the plugin fell back to the serialized configuration, losing the
+  project's own controls, and live validation had nothing to compile with.
+
+  Measured against a real net10.0 build of the sample application rather than assumed: DotVVM
+  4.3.17 compiles on it, the probe reports 58 controls including the project's own with their
+  properties, and the view compiler answers a clean view with nothing and a deliberately broken
+  one with DotVVM's own message. Both halves of the pair matter — an empty answer means little
+  unless something else proves the process is alive.
+
 ### Changed
 
 - The plugin no longer reaches for API the platform keeps to itself. Marketplace's verifier

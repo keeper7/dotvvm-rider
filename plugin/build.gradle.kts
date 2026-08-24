@@ -139,12 +139,16 @@ val probeOutputDir = layout.buildDirectory.dir("languageServerProbe")
 val compilerOutputDir = layout.buildDirectory.dir("languageServerCompiler")
 
 /**
- * Both probe variants have to ship. A net8 host rejects an assembly targeting net9, so the
- * server picks the variant by `tfm` in the target project's runtimeconfig.json
- * (AssemblyProbeSource.ResolveProbeFor). Shipping only one silently loses tier 3 on newer
- * projects.
+ * Every variant has to ship. A net8 host rejects an assembly targeting net9, so the server picks
+ * the variant by `tfm` in the target project's runtimeconfig.json
+ * (AssemblyProbeSource.ResolveProbeFor, and CompilerBinary.Resolve for the compiler). Shipping
+ * fewer than the projects out there silently loses tier 3 and live validation on the newer ones.
+ *
+ * Kept in step with those two lists by hand — they are on the other side of the process boundary
+ * and nothing checks them against each other. Building a variant needs its SDK on the machine
+ * doing the build, which is what makes this a decision rather than a formality.
  */
-val probeFrameworks = listOf("net8.0", "net9.0")
+val probeFrameworks = listOf("net8.0", "net9.0", "net10.0")
 
 val publishLanguageServer by tasks.registering(Exec::class) {
     description = "Publishes the LSP server into the directory bundled with the plugin"
