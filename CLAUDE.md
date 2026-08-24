@@ -60,23 +60,31 @@ the reported code belongs to `echo`, not to the build.
   it also answers what a binding's expression may name, which needs the same two things
 - `fixtures/SampleApp/` — sample DotVVM app for manual and integration testing; it is a real
   buildable app, because the probe needs a built assembly and go-to-definition needs a `.csproj`.
-  `SiteMaster.dotmaster` and `Address.dotcontrol` are written for this fixture, and their
-  **structure** is what makes them worth having —
-  each caught a bug the hand-written fixtures did not — so keep the byte order marks, the
-  multi-line binding with quotes inside it, and the DotVVM properties on plain HTML elements.
-  `MyControl` carries a code-behind class named by `@baseType`, because that is the only shape
-  in which a markup control's properties can be resolved at all.
+  Everything in it is written for it and nothing is copied from anywhere.
 
-  **`Sample.dothtml` compiles cleanly and has to keep doing so** — live validation runs the real
-  compiler over it, so a mistake there shows up as noise in every manual round. What it holds is
-  chosen to survive that: `>` inside a binding, a closing brace inside a string literal, `{0}`
-  inside one, a comment between attributes. An anonymous type (`new { A = x.Name }`) used to
-  stand there as the nested-braces case and had to go — **DotVVM does not compile one at all**,
-  its binding ends at the first `}`, so the file had been broken since it was written and only
-  the compiler noticed. `SiteMaster.dotmaster` and `Address.dotcontrol` are a different matter:
-  their worth is their *structure*, and making them compile would
-  mean writing the resource classes and the data model of a whole imaginary
-  application
+  **Every markup file in it compiles cleanly and has to keep doing so** — live validation runs
+  the real compiler over them, so a mistake shows up as noise in every manual round. What each
+  file holds is chosen to survive that while still carrying the shapes that have caught bugs:
+
+  - `Sample.dothtml` — `>` inside a binding, a closing brace inside a string literal, `{0}`
+    inside one, a comment between attributes, `&quot;` entities inside an `onclick`. An
+    anonymous type (`new { A = x.Name }`) used to stand there as the nested-braces case and had
+    to go: **DotVVM does not compile one at all**, its binding ends at the first `}`, so the
+    file had been broken since it was written and only the compiler noticed.
+  - `SiteMaster.dotmaster` — a byte order mark, a master page that inherits another one, a
+    property family (`Class-collapsed`) and DotVVM properties (`ID`, `Visible`, `IncludeInPage`)
+    on plain HTML elements, an attached property (`Validation.Enabled`) and the `Param-` family
+    on a `RouteLink`.
+  - `Address.dotcontrol` — a byte order mark, `@baseType` with `@noWrapperTag`, `_control.`
+    expressions, the `Validator.*` attached properties, and **a binding spanning several lines
+    with quotes inside it**, which is what `AttributeQuoteMasker` exists for.
+  - `MyControl` carries a code-behind class named by `@baseType`, because that is the only shape
+    in which a markup control's properties can be resolved at all.
+
+  `DotvvmStartup` imports `SampleApp.Resources` **into the configuration** rather than leaving
+  every file to `@import` it. That is how a real project puts its resource classes in scope, and
+  `Address.dotcontrol` writes `{resource: Labels.Street}` with no `@import` of its own to prove
+  the route works.
 
 Registering `HTMLParserDefinition` directly for the DotVVM language is not enough — it builds the
 PSI file with `HTMLLanguage` hardcoded, so `psiFile.language` never returns DotVVM. That is what
