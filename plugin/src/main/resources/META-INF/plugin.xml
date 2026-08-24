@@ -9,6 +9,23 @@
 
   <!-- Shown by Marketplace for this release; the details live in CHANGELOG.md -->
   <change-notes><![CDATA[
+    <h3>0.4.0</h3>
+    <ul>
+      <li>Completion inside a binding expression: an opening brace offers the kinds a file may
+          use - <code>value:</code>, <code>command:</code>, <code>staticCommand:</code>,
+          <code>resource:</code> - and after the colon come the members of the data context,
+          which follows the view</li>
+      <li>A dot walks into whatever the expression evaluates to, however long the chain -
+          <code>Customer.Address.City</code>, <code>Items[0].Name</code></li>
+      <li>Which methods are offered depends on the kind of binding: one evaluated in the browser
+          takes only what DotVVM can translate to JavaScript, one evaluated on the server takes
+          the view model's own methods</li>
+      <li>Typing <code>{{</code> writes the closing braces, and what is offered inside a binding
+          is kept to what may be written there - no HTML tags, no Emmet abbreviations</li>
+      <li>Needs a project that has been built, the same as live validation and through the same
+          process, so <code>DOTVVM_LS_LIVE_VALIDATION=off</code> switches it off as well</li>
+    </ul>
+
     <h3>0.3.0</h3>
     <ul>
       <li>Live validation: the errors a build would report now show while editing - a mistyped
