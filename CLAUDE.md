@@ -624,6 +624,21 @@ never the flat `"Type.Property"` key it looks like it might be.
 Kotlin 2.4.10, IntelliJ Platform Gradle Plugin 2.18.1, Gradle 9.7.1, JVM target 21,
 `since-build = 262`. Server: .NET 8, OmniSharp.Extensions.LanguageServer 0.19.9, xUnit 2.9.3.
 
+**The version is semantic and the build range is closed** — `262` to `262.*`. The two are
+separate questions and Marketplace answers only the second: which IDE a build fits is read from
+the range, never from the version number, so numbering releases after the IDE (`2026.2.18`, the
+way plugins that ship one line per IDE branch do) would buy nothing here and lose what semver
+says — whether an upgrade is a fix or a rewrite.
+
+The range is closed because of what the plugin stands on. Measured on 2026.2.1,
+`com.intellij.platform.lsp.api` holds 40 classes of which **14 are deprecated** — the whole
+`LspServerSupportProvider` / `LspServerDescriptor` / `LspServerManager` spelling, carrying
+`@Deprecated("Renamed to LspIntegrationProvider")`. That rename has already happened once. An
+open end promises a platform nobody has run the plugin against, and the trade is not symmetric:
+too tight a range is widened by publishing a build, while one that installs and then fails to
+load has already reached the user. Raise `untilBuild` together with `platformVersion`, after
+the sandbox has run on the new branch.
+
 **The compile/test platform is IntelliJ IDEA Ultimate 2026.2.1, not Rider** — `BasePlatformTestCase`
 cannot run against Rider at all: Rider preloads services that need an open solution, so test
 application startup dies with `solution can't be null`. This was verified with a control test
