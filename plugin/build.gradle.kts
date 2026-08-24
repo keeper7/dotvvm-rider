@@ -1,4 +1,5 @@
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
+import java.io.File
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -48,6 +49,38 @@ intellijPlatformTesting {
             useInstaller = false
         }
     }
+}
+
+/**
+ * Gives the IDE's native helpers back their executable bit.
+ *
+ * The transform that unpacks a distribution into the Gradle cache drops it - measured on Rider
+ * 2026.2.1, from all thirteen of them, `fsnotifier` included. Without that one the sandbox has
+ * **no file watching at all**: Rider says as much in a balloon ("External file changes sync
+ * might be slow"), and then keeps handing out the content it cached for a file that has since
+ * changed on disk. A stale file is validated and reported like any other, so the editor ends up
+ * underlining a version of the text nobody can see - which cost a debugging round to work out.
+ *
+ * Anything that goes wrong here is swallowed: a sandbox that starts without file watching is
+ * worth more than one that does not start.
+ */
+fun Task.restoreExecutableBits() = doFirst {
+    runCatching {
+        val home = (this as JavaExec).classpath.files
+            .firstNotNullOfOrNull { entry ->
+                generateSequence(entry) { it.parentFile }
+                    .firstOrNull { File(it, "bin/mac").isDirectory }
+            } ?: return@runCatching
+
+        File(home, "bin").walkTopDown()
+            .filter { it.isFile && !it.canExecute() }
+            .filter { !it.name.contains('.') || it.name.endsWith(".dylib") }
+            .forEach { it.setExecutable(true) }
+    }
+}
+
+tasks.matching { it.name == "runRider" || it.name == "runIde" }.configureEach {
+    restoreExecutableBits()
 }
 
 kotlin {
