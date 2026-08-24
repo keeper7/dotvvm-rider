@@ -1,5 +1,9 @@
 # DotVVM for JetBrains Rider
 
+**An unofficial plugin.** It is written and maintained independently, and it is neither
+affiliated with nor endorsed by Riganti, who make DotVVM. For the official tooling, look to
+DotVVM's own channels.
+
 DotVVM support for Rider: syntax highlighting, navigation and validation for `.dothtml`,
 `.dotmaster` and `.dotcontrol` files.
 
