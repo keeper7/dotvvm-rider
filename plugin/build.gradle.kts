@@ -25,7 +25,6 @@ dependencies {
             useInstaller.set(false)
         }
         // Rider does not publish its test framework as an artifact, so the bundled one is used
-        // testFramework.jar z distribuce (viz dokumentace Dependencies Extension)
         testFramework(TestFrameworkType.Platform)
     }
     testImplementation("junit:junit:4.13.2")
@@ -35,7 +34,21 @@ intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "262"
-            untilBuild = provider { null }
+            // Bounded on purpose, although an open end is what the platform's own guidance
+            // suggests for a plugin that keeps to stable API. This one does not have that
+            // luxury: it stands on `com.intellij.platform.lsp.api`, and measured on 2026.2.1
+            // that package holds 40 classes of which **14 are deprecated** - the whole
+            // `LspServerSupportProvider` / `LspServerDescriptor` / `LspServerManager` spelling,
+            // carrying `@Deprecated("Renamed to LspIntegrationProvider")`. A rename of that
+            // size happened once already and the old names are still standing only because
+            // nobody has removed them yet.
+            //
+            // An open end promises every future IDE. We cannot test one that does not exist,
+            // and the cost of the promise is not symmetric: a version bound too tightly is
+            // widened by publishing a build, while one that installs and then fails to load
+            // has already reached the user. Raise this together with `platformVersion` once
+            // the plugin has been run against the newer branch.
+            untilBuild = "262.*"
         }
     }
 }

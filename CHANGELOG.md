@@ -37,6 +37,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   It needs a project that has been built, the same as live validation and through the same
   process - so `DOTVVM_LS_LIVE_VALIDATION=off` switches this off as well.
 
+### Changed
+
+- The plugin now declares the IDE builds it supports as a closed range, `262` to `262.*`,
+  instead of promising every future one. It stands on the platform's LSP API, where 14 of the
+  40 classes in `com.intellij.platform.lsp.api` are already deprecated by a rename; a build
+  nobody has run against the next branch should not claim to work there. The range is widened
+  by publishing a build, which is the cheaper half of the trade.
+
 ## [0.3.0] – 2026-08-23
 
 ### Added
