@@ -3,6 +3,23 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>DotVVM.LanguageServer</RootNamespace>
+
+    <!--
+      Runs on a newer .NET than it was built against. The default policy is Minor, which never
+      crosses a major version: built as net8.0, the server asks for 8.0.0 and a machine carrying
+      only .NET 9 fails with "The framework 'Microsoft.NETCore.App', version '8.0.0' was not
+      found" - and the user sees nothing but an empty status bar, since the plugin itself loads
+      either way.
+
+      Measured with DOTNET_ROLL_FORWARD=LatestMajor: the server starts on 9.0.14 with nothing on
+      stderr, so what stopped it was the policy, not the code. .NET 8 leaves support in November
+      2026, which makes a machine with only a newer one the ordinary case rather than the odd one.
+
+      This belongs to the server alone. The view compiler is started with the target
+      application's own runtimeconfig and follows its policy, and the probe is built for each
+      framework separately - both go by the user's project, which is the point of them.
+    -->
+    <RollForward>Major</RollForward>
   </PropertyGroup>
 
   <ItemGroup>
