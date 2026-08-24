@@ -7,6 +7,16 @@ namespace SampleApp.Resources
     /// </summary>
     public static class Labels
     {
+        public static string ApplicationName => "Sample";
+
+        public static string Home => "Home";
+
         public static string Save => "Save";
+
+        public static string Clear => "Clear";
+
+        public static string Street => "Street";
+
+        public static string City => "City";
     }
 }
