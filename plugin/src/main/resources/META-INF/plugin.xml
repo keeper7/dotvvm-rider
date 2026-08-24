@@ -23,6 +23,18 @@
 
   <!-- Shown by Marketplace for this release; the details live in CHANGELOG.md -->
   <change-notes><![CDATA[
+    <h3>0.5.0</h3>
+    <ul>
+      <li>Projects targeting <b>.NET 10</b> are supported. The probe and the view compiler ship a
+          variant per framework and the newest was net9.0, so on a newer project the plugin lost
+          the project's own controls and had nothing to compile views with</li>
+      <li>The bundled language server now runs on a newer .NET than it was built against. It is
+          built as net8.0 and used to demand exactly that, so a machine carrying only .NET 9 or
+          10 got an empty status bar and no explanation</li>
+      <li>The plugin no longer uses API the platform has deprecated or keeps to itself, which is
+          what keeps it loading on the IDEs to come</li>
+    </ul>
+
     <h3>0.4.0</h3>
     <ul>
       <li>Completion inside a binding expression: an opening brace offers the kinds a file may
