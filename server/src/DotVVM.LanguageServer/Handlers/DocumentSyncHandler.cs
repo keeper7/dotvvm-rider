@@ -51,6 +51,11 @@ public class DocumentSyncHandler : TextDocumentSyncHandlerBase
     public override async Task<Unit> Handle(DidOpenTextDocumentParams request, CancellationToken ct)
     {
         _documents.Set(request.TextDocument.Uri.ToString(), request.TextDocument.Text);
+
+        // Ahead of anything else: completion inside a binding needs the compiler, and the first
+        // one is asked for long before the debounced compilation below would have started it
+        _live.Warm(Path.GetDirectoryName(request.TextDocument.Uri.GetFileSystemPath()) ?? ".");
+
         await PublishDiagnosticsAsync(request.TextDocument.Uri, request.TextDocument.Text, ct);
         ScheduleCompilation(request.TextDocument.Uri, request.TextDocument.Text);
         return Unit.Value;

@@ -5,6 +5,7 @@ import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.psi.PsiElement
+import com.keeper7.dotvvm.ide.MarkupCompletion
 import com.keeper7.dotvvm.lang.DotControlFileType
 import com.keeper7.dotvvm.lang.DotHtmlFileType
 import com.keeper7.dotvvm.lang.DotMasterFileType
@@ -46,11 +47,12 @@ class DirectiveCompletionContributor : CompletionContributor() {
             }
         }
 
-        // Nothing in the file header is an HTML tag, wherever in it the caret stands. The tags
-        // cannot be shut out with stopHere(), which would take the LSP server's answer with
-        // them — measured: 130 tags ahead of the view models the user came for.
+        // Nothing in the file header is markup, wherever in it the caret stands. It cannot be
+        // shut out with stopHere(), which would take the LSP server's answer with it — measured:
+        // 130 tags ahead of the view models the user came for. Emmet's abbreviations belong to
+        // the same list and are not tags at all; see MarkupCompletion.
         result.runRemainingContributors(parameters) { completionResult ->
-            if (!completionResult.lookupElement.lookupString.startsWith('<')) {
+            if (!MarkupCompletion.offers(completionResult.lookupElement)) {
                 result.passResult(completionResult)
             }
         }

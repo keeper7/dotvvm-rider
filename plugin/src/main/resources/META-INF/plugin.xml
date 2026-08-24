@@ -95,6 +95,18 @@
     <completion.contributor language="XML" order="first"
                             implementationClass="com.keeper7.dotvvm.directive.DirectiveCompletionContributor"/>
 
+    <!-- Inside a binding the platform's own HTML tags are never valid; this drops them and
+         offers the kinds of binding itself, so they are there before the server answers.
+         Registered twice on purpose: a binding being typed is still markup, while a finished
+         one is injected and completion inside it runs in DotVVMBinding - measured. -->
+    <completion.contributor language="XML" order="first"
+                            implementationClass="com.keeper7.dotvvm.binding.BindingCompletionContributor"/>
+    <completion.contributor language="DotVVMBinding" order="first"
+                            implementationClass="com.keeper7.dotvvm.binding.BindingCompletionContributor"/>
+
+    <!-- Writes the closing braces of a binding that has just been opened -->
+    <typedHandler implementation="com.keeper7.dotvvm.binding.BindingBraceHandler"/>
+
     <highlightErrorFilter
         implementation="com.keeper7.dotvvm.directive.DirectiveErrorFilter"/>
 
@@ -114,10 +126,11 @@
   </extensions>
 
   <projectListeners>
-    <!-- Focuses the popup that opens on '@'. Without it the item is listed but not selected,
-         so Tab does nothing until an arrow key gives the list the focus - while the popup that
-         LSP opens on ':' inside a tag is focused and Tab works there. -->
-    <listener class="com.keeper7.dotvvm.directive.DirectiveLookupFocus"
+    <!-- Focuses the popup that opens in a header or inside a binding. Without it the item is
+         listed but not selected, so Tab reaches whatever is behind the list - a tab character,
+         or Emmet, which turned `{{re` into `<re></re>`. The popup LSP opens on ':' inside a tag
+         is focused by the platform itself and Tab has always worked there. -->
+    <listener class="com.keeper7.dotvvm.ide.DotvvmLookupFocus"
               topic="com.intellij.codeInsight.lookup.LookupManagerListener"/>
   </projectListeners>
 </idea-plugin>

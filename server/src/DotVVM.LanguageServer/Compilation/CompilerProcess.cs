@@ -42,8 +42,56 @@ public sealed class CompilerProcess : IAsyncDisposable
     /// <summary>Whether a compiler could be started for this project at all.</summary>
     public bool Available => !_unavailable;
 
+    /// <summary>
+    /// What the view compiler says about a file. Null means there is no answer at all - no
+    /// build to run against, or a process that died - and the caller leaves what is shown alone.
+    /// </summary>
     public async Task<IReadOnlyList<CompilerDiagnostic>?> CompileAsync(
         string path, string text, CancellationToken ct)
+    {
+        var response = await ExchangeAsync(id => new Request(id, path, text), ct);
+        return response is null
+            ? null
+            : response.Diagnostics ?? (IReadOnlyList<CompilerDiagnostic>)Array.Empty<CompilerDiagnostic>();
+    }
+
+    /// <summary>
+    /// What may be written inside a binding at the given offset. It goes to the same process as
+    /// a compilation and for the same reason: only it holds both DotVVM and the project's own
+    /// assembly, and only it can say what the data context is at that place in the file.
+    /// </summary>
+    public async Task<IReadOnlyList<CompilerCompletionItem>?> CompleteAsync(
+        string path, string text, int offset, string expression, string binding,
+        CancellationToken ct)
+    {
+        var response = await ExchangeAsync(
+            id => new Request(id, path, text, "complete", offset, expression, binding), ct);
+
+        return response is null
+            ? null
+            : response.Items ?? (IReadOnlyList<CompilerCompletionItem>)Array.Empty<CompilerCompletionItem>();
+    }
+
+    /// <summary>
+    /// Starts the process without asking it anything, so the seconds it spends waking Roslyn are
+    /// spent while the file is being read rather than while the first popup is waiting for it.
+    /// </summary>
+    public async Task WarmAsync(CancellationToken ct)
+    {
+        if (_unavailable) return;
+
+        await _turn.WaitAsync(ct);
+        try { EnsureStarted(); }
+        catch (Exception) { /* the next request reports it; there is nobody to tell here */ }
+        finally { _turn.Release(); }
+    }
+
+    /// <summary>
+    /// One request out, one response back. Requests are serialised: the child reads a line at a
+    /// time, and a completion asked for while a compilation is running waits its turn - which
+    /// costs milliseconds once the process is warm.
+    /// </summary>
+    private async Task<Response?> ExchangeAsync(Func<int, Request> build, CancellationToken ct)
     {
         if (_unavailable) return null;
 
@@ -52,7 +100,7 @@ public sealed class CompilerProcess : IAsyncDisposable
         {
             if (!EnsureStarted()) return null;
 
-            var request = new Request(++_nextId, path, text);
+            var request = build(++_nextId);
             await _process!.StandardInput.WriteLineAsync(
                 JsonSerializer.Serialize(request, WireContext.Default.Request));
             await _process.StandardInput.FlushAsync(ct);
@@ -71,12 +119,11 @@ public sealed class CompilerProcess : IAsyncDisposable
             var response = JsonSerializer.Deserialize(line, WireContext.Default.Response);
             if (response?.Error is not null)
             {
-                await Console.Error.WriteLineAsync(
-                    $"[dotvvm-ls] compiler: {response.Error}");
-                return Array.Empty<CompilerDiagnostic>();
+                await Console.Error.WriteLineAsync($"[dotvvm-ls] compiler: {response.Error}");
+                return new Response(response.Id, null, null, null);
             }
 
-            return response?.Diagnostics ?? (IReadOnlyList<CompilerDiagnostic>)Array.Empty<CompilerDiagnostic>();
+            return response;
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
@@ -175,9 +222,12 @@ public sealed class CompilerProcess : IAsyncDisposable
 
 /// <summary>The two messages that cross the pipe. Kept out of the class so the JSON source
 /// generator can see them - it needs every containing type to be partial.</summary>
-internal record Request(int Id, string Path, string Text);
+internal record Request(
+    int Id, string Path, string Text, string Kind = "compile", int Offset = 0,
+    string Expression = "", string Binding = "value");
 
-internal record Response(int Id, List<CompilerDiagnostic>? Diagnostics, string? Error);
+internal record Response(
+    int Id, List<CompilerDiagnostic>? Diagnostics, List<CompilerCompletionItem>? Items, string? Error);
 
 [JsonSerializable(typeof(Request))]
 [JsonSerializable(typeof(Response))]
