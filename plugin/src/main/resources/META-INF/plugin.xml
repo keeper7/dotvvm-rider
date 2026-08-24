@@ -3,8 +3,22 @@
   <name>DotVVM</name>
   <vendor url="https://github.com/keeper7">keeper7</vendor>
   <description><![CDATA[
-    DotVVM support for JetBrains Rider — syntax highlighting, navigation and validation
-    for .dothtml, .dotmaster and .dotcontrol files.
+    <p>DotVVM support for JetBrains Rider: syntax highlighting, completion, navigation and
+    validation for <code>.dothtml</code>, <code>.dotmaster</code> and <code>.dotcontrol</code>
+    files.</p>
+
+    <p>The files are treated as an HTML superset, so the IDE's HTML, CSS and JavaScript support
+    keeps working. Binding expressions are a language of their own, with completion of the kinds
+    and of the members the data context actually has. Directives are highlighted, offered and
+    navigable, and the errors a build would report show while editing - they come from DotVVM's
+    own view compiler rather than from a guess.</p>
+
+    <p><b>Needs a .NET runtime on the machine</b>, version 8 or newer. A language server ships
+    with the plugin and is started as a separate process; Rider's own runtime is not used. With
+    none found the editor still works and the status bar stays empty.</p>
+
+    <p>An unofficial plugin, written and maintained independently. It is neither affiliated with
+    nor endorsed by Riganti, who make DotVVM.</p>
   ]]></description>
 
   <!-- Shown by Marketplace for this release; the details live in CHANGELOG.md -->

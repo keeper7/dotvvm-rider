@@ -17,6 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   point that already writes a binding's closing braces. Nothing changes for the reader; it is
   what keeps the plugin loading on the next IDE.
 
+### Fixed
+
+- The language server runs on a newer .NET than it was built against. It is built as `net8.0`,
+  and the default policy never crosses a major version, so a machine carrying only .NET 9 failed
+  with `The framework 'Microsoft.NETCore.App', version '8.0.0' was not found` — and showed
+  nothing but an empty status bar, since the plugin itself loads either way. The README promised
+  "a .NET 8 runtime or newer", which was not true as shipped; it is now.
+
+  Measured before changing it: the server starts on 9.0.14 with nothing on stderr, so what stood
+  in the way was the policy rather than the code.
+
 ## [0.4.0] – 2026-08-24
 
 ### Added
