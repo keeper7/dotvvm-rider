@@ -1,8 +1,10 @@
 package com.keeper7.dotvvm.lsp
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -73,5 +75,45 @@ class ServerBinaryLocatorTest {
     @Test fun findsNoRuntimeWhenNoneIsExecutable() {
         val searchPath = listOf(Path.of("/nowhere"), Path.of("/elsewhere"))
         assertNull(ServerBinaryLocator.findDotnet(searchPath) { false })
+    }
+
+    @Test fun pathEntriesKeepTheirOrder() {
+        assertEquals(
+            listOf(Path.of("/usr/bin"), Path.of("/opt/dotnet")),
+            ServerBinaryLocator.pathDirectories(listOf("/usr/bin", "/opt/dotnet")),
+        )
+    }
+
+    @Test fun relativePathEntriesAreSkipped() {
+        assertEquals(
+            listOf(Path.of("/usr/bin")),
+            ServerBinaryLocator.pathDirectories(listOf(".", "bin", "/usr/bin")),
+        )
+    }
+
+    @Test fun anEntryThatIsNoPathDoesNotCostTheOthers() {
+        assertEquals(
+            listOf(Path.of("/usr/bin")),
+            ServerBinaryLocator.pathDirectories(listOf("/bad\u0000entry", "/usr/bin")),
+        )
+    }
+
+    @Test fun anExecutableFileIsRunnable() {
+        val file = temp.newFile("dotnet")
+        assumeTrue(file.setExecutable(true))
+
+        assertTrue(ServerBinaryLocator.isRunnable(file.toPath()))
+    }
+
+    @Test fun aFileWithoutTheExecutableBitIsNotRunnable() {
+        val file = temp.newFile("dotnet")
+        assumeTrue(file.setExecutable(false))
+
+        assertFalse(ServerBinaryLocator.isRunnable(file.toPath()))
+    }
+
+    @Test fun aDirectoryNamedLikeTheRuntimeIsNotRunnable() {
+        // What the macOS installer leaves in /usr/local/share, should that ever be on a PATH
+        assertFalse(ServerBinaryLocator.isRunnable(temp.newFolder("dotnet").toPath()))
     }
 }

@@ -43,6 +43,25 @@ object ServerBinaryLocator {
         userHome?.let { "$it/.dotnet" },  // dotnet-install.sh
     ).map(Path::of)
 
+    /**
+     * The directories a PATH value names, ready to be searched.
+     *
+     * A relative entry would mean something else depending on where the IDE happened to be
+     * started, and one that is no path at all - a stray quote on Windows is enough - must not
+     * cost the user the server, so both are left out.
+     */
+    fun pathDirectories(entries: List<String>): List<Path> = entries.mapNotNull { entry ->
+        runCatching { Path.of(entry) }.getOrNull()?.takeIf(Path::isAbsolute)
+    }
+
+    /**
+     * Whether a candidate can actually be started. `Files.isExecutable` alone says yes to a
+     * directory, and a directory is what `dotnet` is in `/usr/local/share`, where the macOS
+     * installer puts it.
+     */
+    fun isRunnable(candidate: Path): Boolean =
+        Files.isRegularFile(candidate) && Files.isExecutable(candidate)
+
     fun findDotnet(searchPath: List<Path>, isExecutable: (Path) -> Boolean): Path? =
         searchPath.map { it.resolve(DOTNET) }.firstOrNull(isExecutable)
 
