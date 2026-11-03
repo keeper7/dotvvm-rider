@@ -14,7 +14,6 @@ import com.intellij.platform.lsp.api.customization.LspDocumentSymbolDisabled
 import com.intellij.platform.lsp.api.customization.LspFoldingRangeDisabled
 import com.intellij.platform.lsp.api.customization.LspFormattingDisabled
 import com.intellij.platform.lsp.api.customization.LspOnTypeFormattingDisabled
-import java.nio.file.Files
 import java.nio.file.Path
 
 /**
@@ -36,17 +35,24 @@ class DotvvmLspClientDescriptor(project: Project, private val serverDll: Path)
      * minimal PATH that holds no .NET installation, so a bare `dotnet` would fail there while
      * working perfectly when the same IDE is started from a terminal — the server would simply
      * never come up, with nothing to point at the cause.
+     *
+     * The IDE's own PATH is read rather than searched through `findInPath`, which 2026.3 marks
+     * for removal while its replacement, `findFirst`, does not exist on 2026.2. Both branches
+     * share only these two calls.
      */
     private fun findDotnet(): String {
-        PathEnvironmentVariableUtil.findInPath(DOTNET)?.let { return it.absolutePath }
+        val idePath = PathEnvironmentVariableUtil.getPathVariableValue()
+            ?.let(PathEnvironmentVariableUtil::getPathDirs)
+            .orEmpty()
+        val searchPath = ServerBinaryLocator.pathDirectories(idePath) +
+            ServerBinaryLocator.dotnetSearchPath(
+                dotnetRoot = System.getenv("DOTNET_ROOT"),
+                userHome = System.getProperty("user.home"),
+            )
+        ServerBinaryLocator.findDotnet(searchPath, ServerBinaryLocator::isRunnable)
+            ?.let { return it.toString() }
 
-        val searchPath = ServerBinaryLocator.dotnetSearchPath(
-            dotnetRoot = System.getenv("DOTNET_ROOT"),
-            userHome = System.getProperty("user.home"),
-        )
-        ServerBinaryLocator.findDotnet(searchPath, Files::isExecutable)?.let { return it.toString() }
-
-        LOG.warn("No .NET runtime found in PATH or in $searchPath; falling back to '$DOTNET'")
+        LOG.warn("No .NET runtime found in $searchPath; falling back to '$DOTNET'")
         return DOTNET
     }
 
