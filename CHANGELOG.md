@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.1] – 2026-11-03
+
+### Changed
+
+- **Rider 2026.3** is supported, alongside 2026.2, by one and the same build. The range of IDE
+  builds ended at `262.*`, so the new IDE would not have offered the plugin at all.
+
+  2026.3 moved XML and HTML out of the platform into a bundled plugin of their own,
+  `com.intellij.xml`. The classes keep their names and `com.intellij.modules.xml`, which the
+  plugin depends on, became that plugin's alias, so what was built against 2026.2 runs on both.
+  Compiling against 2026.3 does need the new plugin on the classpath, which is why the build
+  stays on the oldest branch of the range.
+
+  Measured rather than assumed: Marketplace's verifier reports the build compatible with Rider
+  2026.2.4 and 2026.3 EAP9, the whole test suite passes on IDEA 2026.3 RC as well as on 2026.2,
+  and highlighting, navigation, completion and live validation were checked by hand on Rider
+  2026.3 EAP9.
+
+- The .NET runtime is found without `PathEnvironmentVariableUtil.findInPath`, which 2026.3 marks
+  for removal while its replacement does not exist on 2026.2. The IDE's own PATH still comes
+  first. A directory named `dotnet` no longer passes for the runtime in the fallback locations.
+
 ## [0.5.0] – 2026-08-24
 
 ### Added
@@ -258,7 +280,8 @@ reported.
 - Completion covers directive names, not their values
 - Verified on macOS only so far
 
-[Unreleased]: https://github.com/keeper7/dotvvm-rider/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/keeper7/dotvvm-rider/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/keeper7/dotvvm-rider/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/keeper7/dotvvm-rider/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/keeper7/dotvvm-rider/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/keeper7/dotvvm-rider/compare/v0.2.1...v0.3.0

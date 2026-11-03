@@ -23,6 +23,11 @@
 
   <!-- Shown by Marketplace for this release; the details live in CHANGELOG.md -->
   <change-notes><![CDATA[
+    <h3>0.5.1</h3>
+    <ul>
+      <li>Rider 2026.3 is supported, alongside 2026.2</li>
+    </ul>
+
     <h3>0.5.0</h3>
     <ul>
       <li>Projects targeting <b>.NET 10</b> are supported. The probe and the view compiler ship a
