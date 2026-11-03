@@ -24,7 +24,7 @@ registers, which tags are valid, and where the view model lives.
 
 ## Requirements
 
-Rider 2026.2 or newer, and a .NET 8 runtime or newer on the machine. The language server ships
+Rider 2026.2 or 2026.3, and a .NET 8 runtime or newer on the machine. The language server ships
 with the plugin, but it is published framework-dependent, so it needs a runtime to start it —
 Rider's own is not used. The plugin looks for one in the IDE's PATH and in the usual install
 locations; when it finds none, the status bar stays empty and the idea.log says so.

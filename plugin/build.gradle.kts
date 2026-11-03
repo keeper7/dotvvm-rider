@@ -24,8 +24,14 @@ dependencies {
         intellijIdeaUltimate(property("platformVersion") as String) {
             useInstaller.set(false)
         }
+        // 2026.3 moved XML and HTML out of the platform into a bundled plugin of their own, which
+        // 2026.2 does not have, so this is set only for a platform that does - see
+        // gradle.properties. A compile-time matter alone: at run time the descriptor's
+        // `com.intellij.modules.xml` reaches either, being that plugin's alias on 2026.3.
+        findProperty("platformBundledPlugins")?.toString()?.split(',')?.forEach { bundledPlugin(it) }
         // Rider does not publish its test framework as an artifact, so the bundled one is used
         testFramework(TestFrameworkType.Platform)
+        pluginVerifier()
     }
     testImplementation("junit:junit:4.13.2")
 }
@@ -46,9 +52,11 @@ intellijPlatform {
             // An open end promises every future IDE. We cannot test one that does not exist,
             // and the cost of the promise is not symmetric: a version bound too tightly is
             // widened by publishing a build, while one that installs and then fails to load
-            // has already reached the user. Raise this together with `platformVersion` once
-            // the plugin has been run against the newer branch.
-            untilBuild = "262.*"
+            // has already reached the user. Raise this once the plugin has been run against the
+            // newer branch - `verifyPlugin`, the tests on that platform, a round in `runRider` -
+            // and leave `platformVersion` on the oldest branch of the range, where nothing newer
+            // can slip into the one build that serves them all.
+            untilBuild = "263.*"
         }
     }
 
@@ -71,6 +79,16 @@ intellijPlatform {
     publishing {
         token = providers.environmentVariable("JETBRAINS_MARKETPLACE_TOKEN")
             .orElse(providers.gradleProperty("marketplaceToken"))
+    }
+
+    // What Marketplace runs on upload, available before it: an internal call and two deprecated
+    // ones had to reach the first upload to be found.
+    pluginVerification {
+        ides {
+            (property("verifyRiderVersions") as String).split(',').forEach { version ->
+                create(IntelliJPlatformType.Rider, version) { useInstaller = false }
+            }
+        }
     }
 }
 
